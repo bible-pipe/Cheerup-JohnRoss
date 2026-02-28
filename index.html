@@ -1125,9 +1125,13 @@
         <div class="ending-box">
             <img src="assets/images/ending.jpg" class="ending-image" alt="ending">
             <div class="ending-text">
-                축복합니다! 당신은 임무를 완수했습니다.
-                성경 말씀은 우리에게 자유를 주는 하나님의 약속입니다.
-                이제 죄로부터 독립하여 하나님의 자녀가 됩시다! 아멘!
+                동해물과 백두산이 마르고 닳도록~
+                하나님이 보우하사 우리나라 만세!
+                축하합니다! 당신은 임무를 완수했습니다.
+                ...옛날, 일본은 우리 민족의 정신을 없애려고 한글을 뺏었습니다.
+                악한 영도 우리에게서 하나님 말씀을 뺏으려고 합니다.
+                그러나 당신은 이겼습니다! 이제 더욱 하나님 말씀을 사랑하여
+                하나님의 사랑을 뺏기지 맙시다! 아멘!
             </div>
             <div id="endingGiftCodeBox" class="ending-gift-code-box" style="display:none;">
                 <div id="endingGiftCode" class="ending-gift-code"></div>
@@ -1568,7 +1572,7 @@
                 villainState.timer = setTimeout(spawnVillain, 2000);
             }
             if (WIZARD_LEVELS.includes(lvNum)) {
-                var wizCfg = WIZARD_CONFIG[lvNum] || { hp: 100, count: 1 };
+                var wizCfg = WIZARD_CONFIG[lvNum] || { hp: 200, count: 1 };
                 var count = wizCfg.count || 1;
                 wizardStates = [];
                 for (var w = 0; w < count; w++) {
@@ -1576,7 +1580,8 @@
                 }
                 for (var w = 0; w < wizardStates.length; w++) {
                     (function (idx) {
-                        wizardStates[idx].spawnTimer = setTimeout(function () { spawnWizard(idx); }, 10000);
+                        var delayMs = 10000 + (idx * 3000);
+                        wizardStates[idx].spawnTimer = setTimeout(function () { spawnWizard(idx); }, delayMs);
                     })(w);
                 }
             }
@@ -2007,6 +2012,7 @@
 
 
 </html>
+
 
 
 
