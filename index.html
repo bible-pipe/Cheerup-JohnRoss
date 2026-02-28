@@ -1,0 +1,2008 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+    <title>한글 성경을 찾아서</title>
+    <script>
+        (function () {
+            var base = document.createElement('base');
+            if (window.location.hostname.indexOf('github.io') !== -1)
+                base.href = 'https://bible-pipe.github.io/find-the-words/';
+            else {
+                var p = window.location.pathname;
+                base.href = (p.replace(/\/[^/]*$/, '/') || '/');
+            }
+            if (document.head) document.head.insertBefore(base, document.head.firstChild);
+        })();
+    </script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Jua&family=Black+Han+Sans&display=swap');
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent
+        }
+
+        body {
+            font-family: 'Jua', sans-serif;
+            background: #1a1a2e;
+            color: #fff;
+            overflow: hidden;
+            height: 100vh;
+            width: 100vw;
+            position: relative
+        }
+
+        .screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            transition: opacity .5s
+        }
+
+        .screen.active {
+            display: flex
+        }
+
+        #loginScreen {
+            background: linear-gradient(135deg, #0f0c29, #302b63, #24243e)
+        }
+
+        .login-box {
+            background: rgba(255, 255, 255, .08);
+            backdrop-filter: blur(20px);
+            border-radius: 24px;
+            padding: 40px 30px;
+            width: 90%;
+            max-width: 380px;
+            text-align: center;
+            border: 1px solid rgba(255, 255, 255, .15);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, .3)
+        }
+
+        .login-box h1 {
+            font-family: 'Black Han Sans', sans-serif;
+            font-size: 2rem;
+            margin-bottom: 8px;
+            background: linear-gradient(135deg, #f093fb, #f5576c, #fda085);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            color: transparent
+        }
+
+        .login-box h2 {
+            font-size: 1rem;
+            color: rgba(255, 255, 255, .6);
+            margin-bottom: 24px;
+            font-weight: normal
+        }
+
+        .login-box input,
+        .login-box select {
+            width: 100%;
+            padding: 14px 16px;
+            border-radius: 14px;
+            border: 1px solid rgba(255, 255, 255, .2);
+            background: rgba(255, 255, 255, .06);
+            color: #fff;
+            font-family: 'Jua';
+            font-size: 1rem;
+            margin-bottom: 14px;
+            outline: none;
+            transition: border .3s
+        }
+
+        .login-box input:focus,
+        .login-box select:focus {
+            border-color: #f5576c
+        }
+
+        .login-box select option {
+            background: #302b63;
+            color: #fff
+        }
+
+        .btn {
+            padding: 14px 32px;
+            border: none;
+            border-radius: 14px;
+            font-family: 'Jua';
+            font-size: 1.1rem;
+            cursor: pointer;
+            transition: all .3s;
+            position: relative;
+            overflow: hidden
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #f093fb, #f5576c);
+            color: #fff;
+            box-shadow: 0 4px 20px rgba(245, 87, 108, .4)
+        }
+
+        .btn-primary:active {
+            transform: scale(.95);
+            box-shadow: 0 2px 10px rgba(245, 87, 108, .3)
+        }
+
+        .btn-secondary {
+            background: rgba(255, 255, 255, .1);
+            color: #fff;
+            border: 1px solid rgba(255, 255, 255, .2)
+        }
+
+        #introScreen {
+            background: linear-gradient(135deg, #0f0c29, #302b63, #24243e)
+        }
+
+        .intro-box {
+            text-align: center;
+            padding: 30px
+        }
+
+        .level-badge {
+            display: inline-block;
+            background: linear-gradient(135deg, #f093fb, #f5576c);
+            padding: 12px 36px;
+            border-radius: 50px;
+            font-size: 1.5rem;
+            margin-bottom: 16px;
+            box-shadow: 0 4px 20px rgba(245, 87, 108, .4)
+        }
+
+        .verse-ref {
+            font-size: 1.1rem;
+            color: rgba(255, 255, 255, .7);
+            margin-bottom: 24px
+        }
+
+        .controls-row {
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+            margin-top: 16px
+        }
+
+        .bgm-btn {
+            position: fixed;
+            bottom: 14px;
+            right: 14px;
+            top: auto;
+            left: auto;
+            z-index: 999;
+            background: rgba(255, 255, 255, .12);
+            border: 1px solid rgba(255, 255, 255, .2);
+            color: #fff;
+            border-radius: 50%;
+            width: 44px;
+            height: 44px;
+            font-size: 1.2rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            backdrop-filter: blur(10px)
+        }
+
+        #gameScreen {
+            background: linear-gradient(180deg, #87CEEB 0%, #98D8C8 40%, #7BC67E 60%, #5a9e4b 100%);
+            overflow: hidden
+        }
+
+        .game-hud {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            padding: 10px 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: rgba(0, 0, 0, .25);
+            backdrop-filter: blur(8px);
+            z-index: 10
+        }
+
+        .hud-item {
+            font-size: .95rem;
+            display: flex;
+            align-items: center;
+            gap: 6px
+        }
+
+        .timer-bar {
+            position: absolute;
+            top: 48px;
+            left: 0;
+            width: 100%;
+            height: 6px;
+            background: rgba(0, 0, 0, .2);
+            z-index: 10
+        }
+
+        .timer-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #f5576c, #fda085);
+            transition: width .3s;
+            border-radius: 0 3px 3px 0
+        }
+
+        .game-scene {
+            position: absolute;
+            top: 54px;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            display: flex;
+            flex-direction: column;
+            min-height: 0;
+        }
+
+        .pipe-area {
+            flex: 0 0 auto;
+            padding: 4px 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 2px;
+            flex-wrap: wrap;
+            overflow: visible;
+            min-height: 56px;
+        }
+
+        .pipe-slot {
+            flex-shrink: 0;
+            min-width: 52px;
+            height: 44px;
+            background: rgba(139, 90, 43, .6);
+            border: 2px solid #8B5A2B;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: .75rem;
+            color: rgba(255, 255, 255, .4);
+            margin: 0 1px;
+            position: relative;
+            transition: all .3s
+        }
+
+        .pipe-slot.filled {
+            background: linear-gradient(180deg, #b0b0b0, #808080);
+            border-color: #666;
+            color: #fff;
+            font-size: .8rem;
+            font-weight: bold;
+            cursor: pointer
+        }
+
+        .pipe-slot.filled:active {
+            transform: scale(.92)
+        }
+
+        .pipe-slot.correct {
+            background: linear-gradient(180deg, #4CAF50, #2E7D32);
+            border-color: #1B5E20
+        }
+
+        .pipe-connector {
+            width: 20px;
+            height: 8px;
+            background: linear-gradient(180deg, #aaa, #888);
+            border-radius: 4px;
+            flex-shrink: 0
+        }
+
+        .word-area {
+            flex: 1;
+            display: flex;
+            flex-wrap: wrap;
+            align-content: center;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 12px 12px 20px;
+            overflow-y: auto;
+            overflow-x: hidden;
+            min-height: 0;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .word-block {
+            position: relative;
+            padding: 10px 16px;
+            background: url('assets/images/buttonLong_beige.png') center/100% 100% no-repeat;
+            font-size: 0.97rem;
+            color: #5c4033;
+            font-family: 'Jua', sans-serif;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all .3s;
+            filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.3));
+            user-select: none;
+            -webkit-user-select: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .word-block:active {
+            transform: scale(.9)
+        }
+
+        .word-block.used {
+            opacity: .3;
+            pointer-events: none;
+            transform: scale(.8)
+        }
+
+        .villain-overlay {
+            position: absolute;
+            top: -40px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 64px;
+            height: 64px;
+            z-index: 20;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            transition: opacity 0.3s;
+            cursor: pointer;
+        }
+
+        .villain-img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            image-rendering: pixelated;
+            animation: villainBounce 1s infinite;
+            filter: drop-shadow(0 4px 8px rgba(0, 0, 0, .5));
+        }
+
+        @keyframes villainBounce {
+
+            0%,
+            100% {
+                transform: translateY(0)
+            }
+
+            50% {
+                transform: translateY(-8px)
+            }
+        }
+
+        .villain-hp-bar {
+            width: 100%;
+            height: 6px;
+            background: rgba(0, 0, 0, .4);
+            border-radius: 3px;
+            margin-top: -5px;
+            overflow: hidden;
+            position: relative;
+            z-index: 21;
+        }
+
+        .villain-hp-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #f44, #ff6);
+            border-radius: 3px;
+            transition: width .2s
+        }
+
+        .wizard-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            cursor: pointer;
+            margin-right: 48px;
+        }
+
+        .wizard-container .wizard-img {
+            width: 64px;
+            height: 64px;
+            object-fit: contain;
+            image-rendering: pixelated;
+            filter: drop-shadow(0 4px 8px rgba(0, 0, 0, .5));
+        }
+
+        .wizard-hp-bar {
+            width: 100%;
+            height: 6px;
+            background: rgba(0, 0, 0, .4);
+            border-radius: 3px;
+            margin-top: 4px;
+            overflow: hidden;
+        }
+
+        .wizard-hp-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #9c27b0, #e040fb);
+            border-radius: 3px;
+            transition: width .2s;
+        }
+
+        .time-penalty-effect {
+            position: fixed;
+            left: 50%;
+            top: 60px;
+            transform: translateX(-50%);
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #f44336;
+            text-shadow: 0 0 4px #000;
+            z-index: 100;
+            animation: timePenaltyFly 1.2s forwards;
+            pointer-events: none;
+        }
+
+        @keyframes timePenaltyFly {
+            0% { opacity: 1; transform: translateX(-50%) translateY(0) scale(1); }
+            100% { opacity: 0; transform: translateX(-50%) translateY(-50px) scale(1.2); }
+        }
+
+        .hit-effect {
+            position: absolute;
+            font-size: 1.5rem;
+            animation: hitFly .6s forwards;
+            pointer-events: none;
+            z-index: 30
+        }
+
+        @keyframes hitFly {
+            0% {
+                opacity: 1;
+                transform: translateY(0) scale(1)
+            }
+
+            100% {
+                opacity: 0;
+                transform: translateY(-40px) scale(1.5)
+            }
+        }
+
+        .crack-effect {
+            position: absolute;
+            font-size: 2rem;
+            animation: crackAnim .5s forwards;
+            pointer-events: none;
+            z-index: 25
+        }
+
+        @keyframes crackAnim {
+            0% {
+                opacity: 1;
+                transform: scale(.5)
+            }
+
+            50% {
+                opacity: 1;
+                transform: scale(1.3)
+            }
+
+            100% {
+                opacity: 0;
+                transform: scale(1)
+            }
+        }
+
+        #clearScreen {
+            background: linear-gradient(135deg, #0f0c29, #302b63, #24243e)
+        }
+
+        .clear-box {
+            text-align: center;
+            padding: 30px
+        }
+
+        .clear-box h2 {
+            font-size: 2rem;
+            margin-bottom: 10px;
+            background: linear-gradient(135deg, #ffd700, #ffa500);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            color: transparent
+        }
+
+        .stars {
+            font-size: 3rem;
+            margin: 16px 0;
+            animation: starPulse 1.5s infinite
+        }
+
+        @keyframes starPulse {
+
+            0%,
+            100% {
+                transform: scale(1)
+            }
+
+            50% {
+                transform: scale(1.15)
+            }
+        }
+
+        #rankScreen {
+            background: linear-gradient(135deg, #0f0c29, #302b63, #24243e)
+        }
+
+        .rank-box {
+            width: 90%;
+            max-width: 400px;
+            max-height: 70vh;
+            overflow-y: auto;
+            background: rgba(255, 255, 255, .06);
+            border-radius: 20px;
+            padding: 24px;
+            border: 1px solid rgba(255, 255, 255, .1)
+        }
+
+        .rank-box h2 {
+            text-align: center;
+            font-size: 1.5rem;
+            margin-bottom: 16px;
+            background: linear-gradient(135deg, #ffd700, #ffa500);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            color: transparent
+        }
+
+        @keyframes shake {
+
+            0%,
+            100% {
+                transform: translateX(0)
+            }
+
+            25% {
+                transform: translateX(-8px)
+            }
+
+            75% {
+                transform: translateX(8px)
+            }
+        }
+
+        .rank-item {
+            display: flex;
+            align-items: center;
+            padding: 10px 12px;
+            border-radius: 12px;
+            margin-bottom: 8px;
+            background: rgba(255, 255, 255, .05)
+        }
+
+        .rank-item:nth-child(1) {
+            background: rgba(255, 215, 0, .15)
+        }
+
+        .rank-item:nth-child(2) {
+            background: rgba(192, 192, 192, .12)
+        }
+
+        .rank-item:nth-child(3) {
+            background: rgba(205, 127, 50, .12)
+        }
+
+        .rank-num {
+            font-size: 1.2rem;
+            width: 32px;
+            text-align: center;
+            font-weight: bold
+        }
+
+        .rank-info {
+            flex: 1;
+            margin-left: 10px
+        }
+
+        .rank-name {
+            font-size: .95rem
+        }
+
+        .rank-grade {
+            font-size: .75rem;
+            color: rgba(255, 255, 255, .5)
+        }
+
+        .rank-score {
+            font-size: 1rem;
+            color: #fda085
+        }
+
+        .game-over-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, .7);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 50;
+            backdrop-filter: blur(4px)
+        }
+
+        .game-over-overlay h2 {
+            font-size: 2rem;
+            color: #f5576c;
+            margin-bottom: 16px
+        }
+
+        .water-flow {
+            position: absolute;
+            height: 8px;
+            background: linear-gradient(90deg, #4fc3f7, #29b6f6, #03a9f4);
+            border-radius: 4px;
+            animation: waterAnim 1s forwards;
+            z-index: 5
+        }
+
+        @keyframes waterAnim {
+            0% {
+                width: 0;
+                opacity: .8
+            }
+
+            100% {
+                width: 100%;
+                opacity: 1
+            }
+        }
+
+        .verse-display {
+            background: rgba(255, 255, 255, .1);
+            border-radius: 14px;
+            padding: 14px 18px;
+            margin: 16px 0;
+            font-size: 1rem;
+            line-height: 1.6;
+            text-align: center;
+            border: 1px solid rgba(255, 255, 255, .15)
+        }
+
+        /* 스토리 인트로 */
+        #storyIntroScreen {
+            background: url('assets/images/intro.png') center/cover no-repeat;
+            padding: 24px 20px;
+            text-align: center;
+            color: #fff;
+        }
+
+        .story-intro-overlay {
+            background: radial-gradient(circle at top, rgba(0, 0, 0, .3), rgba(0, 0, 0, .85));
+            border-radius: 24px;
+            padding: 24px 18px;
+            max-width: 460px;
+            width: 100%;
+        }
+
+        .story-text {
+            margin-top: 16px;
+            font-size: 1rem;
+            line-height: 1.7;
+        }
+
+        .story-controls {
+            margin-top: 18px;
+            display: flex;
+            justify-content: flex-end;
+        }
+
+        /* 존 로스 캐릭터 */
+        .scene-top {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 0;
+            padding-top: 8px;
+            flex-shrink: 0;
+        }
+
+        .john-ross-container {
+            width: 88px;
+            height: 88px;
+            position: relative;
+        }
+
+        .john-ross-img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            image-rendering: pixelated;
+            filter: drop-shadow(0 4px 6px rgba(0, 0, 0, .4));
+            transition: opacity .4s;
+        }
+
+        .john-ross-img.fade-out {
+            opacity: 0;
+        }
+
+        .john-ross-img.fade-in {
+            opacity: 1;
+        }
+
+        /* 엔딩 화면 */
+        #endingScreen {
+            background: #000;
+            color: #fff;
+        }
+
+        .ending-box {
+            text-align: center;
+            padding: 20px;
+        }
+
+        .ending-image {
+            max-width: 90vw;
+            max-height: 50vh;
+            object-fit: contain;
+            border-radius: 16px;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, .6);
+            margin-bottom: 16px;
+        }
+
+        .ending-text {
+            margin-top: 12px;
+            font-size: 1rem;
+            line-height: 1.7;
+        }
+
+        .ending-gift-code-box {
+            margin-top: 20px;
+            padding: 16px 24px;
+            background: rgba(255, 255, 255, .12);
+            border-radius: 12px;
+            border: 2px dashed rgba(255, 255, 255, .3);
+            text-align: center;
+        }
+
+        .ending-gift-code {
+            font-size: 1.8rem;
+            font-weight: bold;
+            letter-spacing: .25em;
+            color: #ffd54f;
+            text-shadow: 0 0 8px rgba(0, 0, 0, .5);
+        }
+
+        .ending-gift-code-hint {
+            margin-top: 10px;
+            font-size: 0.95rem;
+            color: rgba(255, 255, 255, .85);
+        }
+
+        /* 관리자 / 유지 보수 */
+        #maintenanceScreen {
+            background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
+        }
+
+        .maintenance-box {
+            text-align: center;
+            padding: 24px 20px;
+            background: rgba(255, 255, 255, .08);
+            border-radius: 20px;
+            border: 1px solid rgba(255, 255, 255, .15);
+            max-width: 420px;
+        }
+
+        .maintenance-box h2 {
+            font-size: 1.5rem;
+            margin-bottom: 12px;
+        }
+
+        .maintenance-box p {
+            font-size: 1rem;
+            color: rgba(255, 255, 255, .8);
+        }
+
+        #adminScreen {
+            background: linear-gradient(135deg, #141e30, #243b55);
+        }
+
+        .admin-box {
+            width: 90%;
+            max-width: 480px;
+            max-height: 80vh;
+            overflow-y: auto;
+            background: rgba(255, 255, 255, .06);
+            border-radius: 20px;
+            padding: 20px;
+            border: 1px solid rgba(255, 255, 255, .1);
+        }
+
+        .admin-box h2 {
+            text-align: center;
+            font-size: 1.5rem;
+            margin-bottom: 14px;
+        }
+
+        .admin-section {
+            margin-top: 16px;
+            padding-top: 12px;
+            border-top: 1px solid rgba(255, 255, 255, .1);
+        }
+
+        .admin-section h3 {
+            font-size: 1rem;
+            margin-bottom: 8px;
+            color: rgba(255, 255, 255, .9);
+        }
+
+        .admin-label {
+            font-size: .9rem;
+            margin-bottom: 4px;
+            color: rgba(255, 255, 255, .7);
+        }
+
+        .level-list {
+            margin-top: 8px;
+        }
+
+        .level-item {
+            padding: 8px;
+            border-radius: 10px;
+            background: rgba(0, 0, 0, .25);
+            margin-bottom: 6px;
+            font-size: .85rem;
+        }
+
+        .level-item-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 4px;
+        }
+
+        .level-item-actions {
+            display: flex;
+            gap: 6px;
+            margin-top: 4px;
+        }
+
+        .gift-code-list {
+            margin-top: 8px;
+            overflow-x: auto;
+        }
+
+        .gift-code-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.9rem;
+            color: rgba(255, 255, 255, .9);
+        }
+
+        .gift-code-table th,
+        .gift-code-table td {
+            padding: 8px 10px;
+            text-align: left;
+            border-bottom: 1px solid rgba(255, 255, 255, .15);
+        }
+
+        .gift-code-table th {
+            color: rgba(255, 255, 255, .7);
+            font-weight: 600;
+        }
+
+        .gift-code-table code {
+            background: rgba(255, 255, 255, .15);
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 1rem;
+        }
+
+        .chip {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 999px;
+            font-size: .7rem;
+            background: rgba(255, 255, 255, .12);
+        }
+
+        .btn-small {
+            padding: 4px 8px;
+            font-size: .75rem;
+        }
+
+        .bgm-unlock-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, .5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            cursor: pointer;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .bgm-unlock-overlay p {
+            font-family: 'Jua', sans-serif;
+            font-size: 1.1rem;
+            color: #fff;
+            text-align: center;
+            padding: 20px;
+            background: rgba(0, 0, 0, .6);
+            border-radius: 16px;
+            max-width: 280px;
+        }
+
+        .login-box h1 {
+            font-family: 'Jua', sans-serif;
+            font-weight: 400;
+            letter-spacing: 0.03em;
+        }
+
+        /* 모바일 레이아웃 튜닝 */
+        @media (max-width: 480px) {
+            body {
+                font-size: 14px;
+            }
+
+            .login-box {
+                padding: 28px 20px;
+            }
+
+            .login-box h1 {
+                font-size: 1.6rem;
+            }
+
+            .login-box h2 {
+                font-size: .9rem;
+            }
+
+            .game-hud {
+                padding: 8px 10px;
+            }
+
+            .hud-item {
+                font-size: .8rem;
+            }
+
+            .pipe-slot {
+                min-width: 52px;
+                height: 44px;
+                margin: 0 1px;
+            }
+
+            .word-area {
+                padding: 12px 10px 24px;
+                gap: 8px;
+            }
+
+            .word-block {
+                padding: 8px 12px;
+                font-size: 0.9rem;
+            }
+
+            .story-intro-overlay {
+                padding: 20px 16px;
+            }
+
+            .story-text {
+                font-size: .9rem;
+            }
+
+            .ending-box {
+                padding: 16px 12px;
+            }
+
+            .ending-text {
+                font-size: .9rem;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <button class="bgm-btn" id="bgmBtn" onclick="toggleBGM()">🔊</button>
+
+    <div class="bgm-unlock-overlay" id="bgmUnlockOverlay" aria-hidden="true">
+        <p>화면을 터치하면 배경음악이 재생됩니다</p>
+    </div>
+
+    <div class="screen active" id="loginScreen">
+        <div class="login-box">
+            <h1>한글 성경을 찾아서 🇰🇷</h1>
+            <h2>성경 암송 퍼즐 게임</h2>
+            <div id="savedInfo"
+                style="display:none;background:rgba(255,255,255,.08);border-radius:12px;padding:12px;margin-bottom:14px;text-align:left;font-size:.9rem">
+                <span>👋 <strong id="savedName"></strong> (<span id="savedGrade"></span>)</span>
+            </div>
+            <input type="text" id="nameInput" placeholder="닉네임을 입력하세요" maxlength="10">
+            <select id="gradeSelect">
+                <option value="" disabled selected>반을 선택하세요</option>
+                <option value="믿음반">믿음반</option>
+                <option value="사랑반">사랑반</option>
+                <option value="소망반">소망반</option>
+                <option value="축복반">축복반</option>
+                <option value="다니엘반">다니엘반</option>
+            </select>
+            <div class="controls-row" style="margin-top:0; margin-bottom:10px">
+                <button class="btn btn-primary" style="flex:1" onclick="startLogin()">게임 시작! 🚀</button>
+                <button class="btn btn-secondary" style="flex:1" onclick="showRanking()">🏆 랭킹</button>
+            </div>
+            <button class="btn btn-secondary" style="width:100%;font-size:.85rem;background:rgba(255,255,255,.05)"
+                onclick="resetLogin()">🔄 사용자 초기화</button>
+        </div>
+    </div>
+
+    <div class="screen" id="storyIntroScreen">
+        <div class="story-intro-overlay">
+            <h2 style="font-family:'Jua',sans-serif;font-size:1.4rem;margin-bottom:8px;font-weight:400;">
+                존 로스와 함께하는 말씀 찾기
+            </h2>
+            <div class="story-text">
+                존 로스 선교사는 아이들에게 한글과 성경을 가르쳤습니다. 
+                그런데 귀신이 나타나 성경 글자를 섞어 놓았습니다!
+                귀신의 방해를 물리치고 성경을 본래대로 찾아주세요!
+            </div>
+            <div class="story-controls">
+                <button class="btn btn-primary btn-small" onclick="skipStoryIntro()">다음 ▶</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="screen" id="introScreen">
+        <div class="intro-box">
+            <div class="level-badge" id="levelBadge">Level 1</div>
+            <div class="verse-ref" id="verseRef">창세기 1:1</div>
+            <div class="verse-display" id="verseHint"></div>
+            <div class="controls-row">
+                <button class="btn btn-primary" onclick="startLevel()">시작! 💪</button>
+                <button class="btn btn-secondary" onclick="showRanking()">🏆 랭킹</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="screen" id="gameScreen">
+        <div class="game-hud">
+            <div class="hud-item">🔧 <span id="hudLevel">Lv.1</span></div>
+            <div class="hud-item">⏱ <span id="hudTimer">120</span>초</div>
+            <div class="hud-item">⭐ <span id="hudScore">0</span></div>
+            <div class="hud-item"><button class="btn btn-secondary" style="padding:4px 8px;font-size:0.8rem"
+                    onclick="endGameEarly()">여기서 끝내기</button></div>
+        </div>
+        <div class="timer-bar">
+            <div class="timer-fill" id="timerFill"></div>
+        </div>
+        <div class="game-scene">
+            <div class="scene-top">
+                <div class="john-ross-container">
+                    <img id="johnRossImage" class="john-ross-img" src="assets/images/john ross sad.png"
+                        alt="John Ross">
+                </div>
+                <div id="wizardContainer" class="wizard-container" style="display:none;"></div>
+                <div id="wizardContainer2" class="wizard-container" style="display:none;"></div>
+            </div>
+            <div class="pipe-area" id="pipeArea"></div>
+            <div class="word-area" id="wordArea"></div>
+        </div>
+    </div>
+
+    <div class="screen" id="clearScreen">
+        <div class="clear-box">
+            <div class="stars">⭐🌟⭐</div>
+            <h2 id="clearTitle">레벨 클리어!</h2>
+            <div class="verse-display" id="clearVerse"></div>
+            <p id="clearScore" style="margin:12px 0;color:rgba(255,255,255,.7)"></p>
+            <div class="controls-row">
+                <button class="btn btn-primary" id="nextLevelBtn" onclick="nextLevel()">다음 레벨 ▶</button>
+                <button class="btn btn-secondary" onclick="showRanking()">🏆 랭킹</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="screen" id="rankScreen">
+        <div class="rank-box">
+            <h2>🏆 랭킹</h2>
+            <div id="rankList"></div>
+        </div>
+        <div class="controls-row" style="margin-top:16px">
+            <button class="btn btn-secondary" onclick="backToLogin()">처음으로</button>
+            <button class="btn btn-secondary" onclick="backFromRanking()">돌아가기</button>
+        </div>
+    </div>
+
+    <div class="screen" id="endingScreen">
+        <div class="ending-box">
+            <img src="assets/images/ending.jpg" class="ending-image" alt="ending">
+            <div class="ending-text">
+                축복합니다! 당신은 임무를 완수했습니다.
+                성경 말씀은 우리에게 자유를 주는 하나님의 약속입니다.
+                이제 죄로부터 독립하여 하나님의 자녀가 됩시다! 아멘!
+            </div>
+            <div id="endingGiftCodeBox" class="ending-gift-code-box" style="display:none;">
+                <div id="endingGiftCode" class="ending-gift-code"></div>
+                <div class="ending-gift-code-hint">이 코드를 선생님께 보여주세요.</div>
+            </div>
+            <div class="controls-row" style="margin-top:18px">
+                <button class="btn btn-primary" onclick="showRanking()">🏆 랭킹 보기</button>
+                <button class="btn btn-secondary" onclick="backToLogin()">처음으로</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="screen" id="maintenanceScreen">
+        <div class="maintenance-box">
+            <h2>⏸ 게임이 잠시 멈췄어요</h2>
+            <p>다음 주일 게임을 기다려 주세요...</p>
+            <div style="margin-top:18px">
+                <button class="btn btn-secondary" onclick="tryReloadGame()">다시 접속 시도</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="screen" id="adminScreen">
+        <div class="admin-box">
+            <h2>관리자 페이지</h2>
+            <div class="admin-section">
+                <h3>게임 전체 상태</h3>
+                <div class="admin-label">현재 상태: <span id="adminGameStatusText">-</span></div>
+                <div style="margin-top:8px;display:flex;gap:8px">
+                    <button class="btn btn-primary btn-small" onclick="setGlobalGameActive(true)">게임 시작 상태로</button>
+                    <button class="btn btn-secondary btn-small" onclick="setGlobalGameActive(false)">게임 전체 멈춤</button>
+                </div>
+            </div>
+            <div class="admin-section">
+                <h3>레벨 에디터</h3>
+                <div class="admin-label">말씀 목록</div>
+                <div id="adminLevelList" class="level-list"></div>
+                <div style="margin-top:10px">
+                    <button class="btn btn-primary btn-small" onclick="addNewLevel()">새 말씀 추가</button>
+                    <button class="btn btn-secondary btn-small" onclick="resetLevelsToDefault()">기본 말씀으로 초기화</button>
+                </div>
+            </div>
+            <div class="admin-section">
+                <h3>랭킹 현황</h3>
+                <div id="adminRankSummary" style="font-size:.85rem;color:rgba(255,255,255,.8)">랭킹 정보를 불러오는 중...</div>
+                <div style="margin-top:8px">
+                    <button class="btn btn-secondary btn-small" onclick="resetAllRanks()">랭킹 전체 초기화</button>
+                </div>
+            </div>
+            <div class="admin-section">
+                <h3>선물 코드 현황</h3>
+                <div class="admin-label">엔딩 도달 사용자별 수령 코드</div>
+                <div id="adminGiftCodeList" class="gift-code-list"></div>
+            </div>
+            <div class="admin-section" style="text-align:center">
+                <button class="btn btn-secondary btn-small" onclick="backToLogin()">로그인 화면으로</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const STORAGE_KEYS = {
+            user: 'pipeGameUser',
+            ranks: 'pipeGameRanks',
+            levels: 'pipeGameLevels',
+            globalStatus: 'pipeGameGlobalStatus',
+            giftCodeLog: 'pipeGameGiftCodeLog'
+        };
+        const ADMIN_PASSWORD = 'HelocK862@';
+        const DEFAULT_LEVELS = [
+            { ref: "창세기 1:1", text: "태초에 하나님이 천지를 창조하시니라", group: "공통" },
+            { ref: "시편 23:1", text: "여호와는 나의 목자시니 내게 부족함이 없으리로다", group: "공통" },
+            { ref: "잠언 3:5", text: "너는 마음을 다하여 여호와를 신뢰하고 네 명철을 의지하지 말라", group: "공통" },
+            { ref: "요한복음 3:16", text: "하나님이 세상을 이처럼 사랑하사 독생자를 주셨으니 이는 그를 믿는 자마다 멸망하지 않고 영생을 얻게 하려 하심이라", group: "공통" },
+            { ref: "빌립보서 4:13", text: "내게 능력 주시는 자 안에서 내가 모든 것을 할 수 있느니라", group: "공통" },
+            { ref: "여호수아 1:9", text: "내가 네게 명한 것이 아니냐 강하고 담대하라 두려워하지 말며 놀라지 말라", group: "공통" },
+            { ref: "로마서 8:28", text: "우리가 알거니와 하나님을 사랑하는 자 곧 그의 뜻대로 부르심을 입은 자들에게는 모든 것이 합력하여 선을 이루느니라", group: "공통" },
+            { ref: "이사야 41:10", text: "두려워하지 말라 내가 너와 함께 함이라 놀라지 말라 나는 네 하나님이 됨이라", group: "공통" },
+            { ref: "마태복음 28:20", text: "내가 세상 끝날까지 너희와 항상 함께 있으리라", group: "공통" },
+            { ref: "시편 119:105", text: "주의 말씀은 내 발에 등이요 내 길에 빛이니이다", group: "공통" },
+            { ref: "잠언 22:6", text: "마땅히 행할 길을 아이에게 가르치라 그리하면 늙어도 그것을 떠나지 아니하리라", group: "공통" },
+            { ref: "히브리서 11:1", text: "믿음은 바라는 것들의 실상이요 보이지 않는 것들의 증거니", group: "공통" },
+            { ref: "예레미야 29:11", text: "너희를 향한 나의 생각을 내가 아노라 평안이요 재앙이 아니니라", group: "공통" },
+            { ref: "시편 46:1", text: "하나님은 우리의 피난처시요 힘이시니 환난 중에 만날 큰 도움이시라", group: "공통" },
+            { ref: "갈라디아서 5:22", text: "오직 성령의 열매는 사랑과 희락과 화평과 오래 참음과 자비와 양선과 충성과 온유와 절제니", group: "공통" },
+            { ref: "고린도전서 13:4", text: "사랑은 오래 참고 사랑은 온유하며 시기하지 아니하며 자랑하지 아니하며 교만하지 아니하며", group: "공통" },
+            { ref: "에베소서 2:8", text: "너희는 그 은혜에 의하여 믿음으로 말미암아 구원을 받았으니 이것은 너희에게서 난 것이 아니요 하나님의 선물이라", group: "공통" },
+            { ref: "시편 37:4", text: "또한 여호와를 기뻐하라 그가 네 마음의 소원을 네게 이루어 주시리로다", group: "공통" },
+            { ref: "디모데후서 1:7", text: "하나님이 우리에게 주신 것은 두려워하는 마음이 아니요 능력과 사랑과 절제하는 마음이니", group: "공통" },
+            { ref: "시편 150:6", text: "호흡이 있는 자마다 여호와를 찬양할지어다 할렐루야", group: "공통" }
+        ];
+        const MAX_LEVELS_PER_RUN = 10;
+        const WOLF_LEVELS = [3, 5, 7, 10];
+        const WIZARD_LEVELS = [5, 8, 9, 10];
+        const WIZARD_CONFIG = { 5: { hp: 100, count: 1 }, 8: { hp: 200, count: 1 }, 9: { hp: 250, count: 1 }, 10: { hp: 100, count: 2 } };
+        let levelPool = [];
+        let runLevels = [];
+        let player = { name: '', grade: '', score: 0 };
+        let curLevel = 0, timeLeft = 120, timer = null, placedWords = [], villainState = null, wizardStates = null, bgmPlaying = false, prevScreen = 'loginScreen', globalStatus = { active: true }, storyShown = false;
+        let loginBgmAudio = null, mainBgmAudio = null, endingBgmAudio = null;
+        function getLoginBgm() { if (!loginBgmAudio) { loginBgmAudio = new Audio('assets/sounds/Villatic_Animation.mp3'); loginBgmAudio.loop = true; loginBgmAudio.volume = 0.4; } return loginBgmAudio; }
+        function getMainBgm() { if (!mainBgmAudio) { mainBgmAudio = new Audio('assets/sounds/The_Amazing_Digital_Circus.mp3'); mainBgmAudio.loop = true; mainBgmAudio.volume = 0.3; } return mainBgmAudio; }
+        function getEndingBgm() {
+            if (!endingBgmAudio) {
+                endingBgmAudio = new Audio('assets/sounds/National_Anthem_Instrumental_One_Verse.mp3');
+                endingBgmAudio.loop = true;
+                endingBgmAudio.volume = 0.4;
+            }
+            return endingBgmAudio;
+        }
+        const sfx = {
+            punch: 'assets/sounds/punch.ogg',
+            crack: 'assets/sounds/crack.ogg',
+            place: 'assets/sounds/place.ogg',
+            clear: 'assets/sounds/clear.ogg',
+            wolf: 'assets/sounds/wolf.wav',
+            wizardAttack: 'assets/sounds/impactMining_002.ogg',
+            click: 'assets/sounds/click.ogg',
+            wrong: 'assets/sounds/wrong.ogg',
+            correct: 'assets/sounds/correct.ogg'
+        };
+        function playSfx(name, vol) { try { let a = new Audio(sfx[name]); a.volume = vol != null ? vol : 0.5; a.play(); } catch (e) { } }
+        function playPlace() { playSfx('place') }
+        function playCorrect() { playSfx('correct') }
+        function playWrong() { playSfx('wrong') }
+        function playPunch() { playSfx('punch') }
+        function playCrack() { playSfx('crack') }
+        function playWolfHowl() { playSfx('wolf', 0.25) }
+        function playWizardAttack() { playSfx('wizardAttack') }
+        function playClear() { playSfx('clear') }
+        function playClick() { playSfx('click') }
+
+        function startBGMForCurrentScreen() {
+            const act = document.querySelector('.screen.active');
+            const id = act && act.id;
+            try {
+                if (loginBgmAudio) loginBgmAudio.pause();
+                if (mainBgmAudio) mainBgmAudio.pause();
+                if (endingBgmAudio) endingBgmAudio.pause();
+
+                if (id === 'endingScreen') {
+                    var endingBgm = getEndingBgm();
+                    endingBgm.currentTime = 0;
+                    endingBgm.play().catch(function () {
+                        document.getElementById('endingScreen').setAttribute('data-bgm-pending', '1');
+                    });
+                    return;
+                }
+                if (!bgmPlaying) return;
+                if (id === 'maintenanceScreen') {
+                    // no bgm
+                } else if (id === 'loginScreen' || id === 'storyIntroScreen' || id === 'introScreen') {
+                    getLoginBgm().play().catch(() => { });
+                } else {
+                    getMainBgm().play().catch(() => { });
+                }
+            } catch (e) { }
+        }
+
+        function startBGM() {
+            if (bgmPlaying) return;
+            bgmPlaying = true;
+            document.getElementById('bgmBtn').textContent = '🔊';
+            getLoginBgm();
+            getMainBgm();
+            getEndingBgm();
+            startBGMForCurrentScreen();
+        }
+
+        function stopBGM() {
+            bgmPlaying = false;
+            if (loginBgmAudio) loginBgmAudio.pause();
+            if (mainBgmAudio) mainBgmAudio.pause();
+            if (endingBgmAudio) endingBgmAudio.pause();
+            document.getElementById('bgmBtn').textContent = '🔇';
+        }
+
+        function toggleBGM() { if (bgmPlaying) stopBGM(); else startBGM() }
+
+        function showScreen(id) {
+            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+            document.getElementById(id).classList.add('active');
+            if (bgmPlaying) startBGMForCurrentScreen();
+            if (id === 'loginScreen' && !bgmPlaying && document.getElementById('bgmUnlockOverlay')) {
+                document.getElementById('bgmUnlockOverlay').style.display = 'flex';
+                document.getElementById('bgmUnlockOverlay').setAttribute('aria-hidden', 'false');
+            } else if (id !== 'loginScreen' && document.getElementById('bgmUnlockOverlay')) {
+                document.getElementById('bgmUnlockOverlay').style.display = 'none';
+                document.getElementById('bgmUnlockOverlay').setAttribute('aria-hidden', 'true');
+            }
+        }
+
+        function setJohnRossMood(mood) {
+            const img = document.getElementById('johnRossImage');
+            if (!img) return;
+            const sadSrc = 'assets/images/john ross sad.png';
+            const happySrc = 'assets/images/john ross happy.png';
+            const targetSrc = mood === 'happy' ? happySrc : sadSrc;
+            if (img.dataset.currentMood === mood) return;
+            img.classList.remove('fade-in');
+            img.classList.add('fade-out');
+            setTimeout(() => {
+                img.src = targetSrc;
+                img.dataset.currentMood = mood;
+                img.classList.remove('fade-out');
+                img.classList.add('fade-in');
+            }, 200);
+        }
+        function loadLevelPool() {
+            let saved = JSON.parse(localStorage.getItem(STORAGE_KEYS.levels) || 'null');
+            if (Array.isArray(saved) && saved.length > 0) {
+                levelPool = saved.map(lv => ({
+                    ref: lv.ref,
+                    text: lv.text,
+                    group: lv.group || '공통',
+                    enabled: lv.enabled !== false
+                }));
+            } else {
+                levelPool = DEFAULT_LEVELS.map(lv => ({
+                    ref: lv.ref,
+                    text: lv.text,
+                    group: lv.group || '공통',
+                    enabled: true
+                }));
+            }
+        }
+
+        function saveLevelPool() {
+            localStorage.setItem(STORAGE_KEYS.levels, JSON.stringify(levelPool));
+        }
+
+        function getCurrentGroupKey() {
+            const g = player.grade;
+            if (g === '믿음반' || g === '사랑반' || g === '소망반' || g === '축복반' || g === '다니엘반') return g;
+            return '공통';
+        }
+
+        function getPlayableLevels() {
+            loadLevelPool();
+            if (!levelPool || levelPool.length === 0) return [];
+            const groupKey = getCurrentGroupKey();
+            return levelPool.filter(lv =>
+                lv &&
+                lv.ref &&
+                lv.text &&
+                lv.enabled !== false &&
+                (lv.group === '공통' || lv.group === groupKey)
+            );
+        }
+
+        function prepareRunLevels() {
+            loadLevelPool();
+            const candidates = getPlayableLevels();
+            if (!candidates || candidates.length === 0) {
+                alert('사용 가능한 말씀이 없습니다. 관리자 페이지에서 레벨을 추가해주세요.');
+                runLevels = [];
+                return;
+            }
+            const max = Math.min(MAX_LEVELS_PER_RUN, candidates.length);
+            const indices = candidates.map((_, i) => i);
+            for (let i = indices.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [indices[i], indices[j]] = [indices[j], indices[i]];
+            }
+            runLevels = [];
+            for (let i = 0; i < max; i++) {
+                runLevels.push(candidates[indices[i]]);
+            }
+            curLevel = 0;
+        }
+
+        function getCurrentLevelsArray() {
+            if (runLevels && runLevels.length > 0) return runLevels;
+            return getPlayableLevels();
+        }
+
+        function getCurrentLevel() {
+            const arr = getCurrentLevelsArray();
+            if (!arr || arr.length === 0) return null;
+            const idx = Math.min(curLevel, arr.length - 1);
+            return arr[idx];
+        }
+
+        function loadGlobalStatus() {
+            let saved = JSON.parse(localStorage.getItem(STORAGE_KEYS.globalStatus) || 'null');
+            if (!saved) saved = { active: true };
+            globalStatus = saved;
+        }
+
+        function isGameActive() {
+            return !globalStatus || globalStatus.active !== false;
+        }
+
+        function updateAdminStatusText() {
+            const el = document.getElementById('adminGameStatusText');
+            if (!el) return;
+            el.textContent = isGameActive() ? '진행 중' : '멈춤 (접속 차단)';
+        }
+
+        function loadSavedLogin() {
+            let saved = JSON.parse(localStorage.getItem(STORAGE_KEYS.user) || 'null');
+            if (saved && saved.name) {
+                document.getElementById('nameInput').value = saved.name;
+                document.getElementById('savedName').textContent = saved.name;
+                document.getElementById('savedGrade').textContent = saved.grade;
+                document.getElementById('savedInfo').style.display = 'block';
+                let opts = document.getElementById('gradeSelect').options;
+                for (let i = 0; i < opts.length; i++) { if (opts[i].value === saved.grade) { opts[i].selected = true; break } }
+            }
+        }
+
+        function resetLogin() {
+            localStorage.removeItem(STORAGE_KEYS.user);
+            document.getElementById('nameInput').value = '';
+            document.getElementById('gradeSelect').selectedIndex = 0;
+            document.getElementById('savedInfo').style.display = 'none';
+            alert('로그인 정보가 초기화되었습니다!');
+        }
+
+        function startLogin() {
+            if (!isGameActive()) {
+                showScreen('maintenanceScreen');
+                return;
+            }
+            let n = document.getElementById('nameInput').value.trim();
+            let g = document.getElementById('gradeSelect').value;
+            if (!n) { alert('닉네임을 입력해주세요!'); return }
+            if (!g) { alert('학년을 선택해주세요!'); return }
+            player.name = n; player.grade = g; player.score = 0; curLevel = 0;
+            localStorage.setItem(STORAGE_KEYS.user, JSON.stringify({ name: n, grade: g }));
+            try { sessionStorage.setItem('pipeGameRunStartTime', String(Date.now())); } catch (e) { }
+            prepareRunLevels();
+            storyShown = false;
+            showStoryIntro();
+            if (!bgmPlaying) startBGM();
+        }
+
+        function showStoryIntro() {
+            showScreen('storyIntroScreen');
+        }
+
+        function skipStoryIntro() {
+            storyShown = true;
+            showIntro();
+        }
+
+        loadLevelPool();
+        loadGlobalStatus();
+        loadSavedLogin();
+        updateAdminStatusText();
+
+        const bgmUnlockEl = document.getElementById('bgmUnlockOverlay');
+        function showBgmUnlockOverlay() {
+            if (bgmUnlockEl && !bgmPlaying && document.getElementById('loginScreen').classList.contains('active')) {
+                bgmUnlockEl.style.display = 'flex';
+                bgmUnlockEl.setAttribute('aria-hidden', 'false');
+            }
+        }
+        function hideBgmUnlockOverlay() {
+            if (bgmUnlockEl) {
+                bgmUnlockEl.style.display = 'none';
+                bgmUnlockEl.setAttribute('aria-hidden', 'true');
+            }
+        }
+        if (bgmUnlockEl) {
+            bgmUnlockEl.addEventListener('click', function () {
+                startBGM();
+                hideBgmUnlockOverlay();
+            });
+            bgmUnlockEl.addEventListener('touchstart', function (e) {
+                e.preventDefault();
+                startBGM();
+                hideBgmUnlockOverlay();
+            }, { passive: false });
+        }
+        window.addEventListener('load', function () {
+            showBgmUnlockOverlay();
+        });
+        document.addEventListener('visibilitychange', function () {
+            if (document.visibilityState === 'visible' && document.getElementById('loginScreen').classList.contains('active') && !bgmPlaying) {
+                showBgmUnlockOverlay();
+            }
+        });
+        var endingEl = document.getElementById('endingScreen');
+        if (endingEl) {
+            endingEl.addEventListener('click', function () {
+                if (this.getAttribute('data-bgm-pending') === '1') {
+                    this.removeAttribute('data-bgm-pending');
+                    var bgm = getEndingBgm();
+                    bgm.currentTime = 0;
+                    bgm.play().catch(function () { });
+                }
+            });
+        }
+
+        function showIntro() {
+            let lv = getCurrentLevel();
+            if (!lv) {
+                alert('사용 가능한 레벨이 없습니다. 관리자 페이지에서 레벨을 확인해주세요.');
+                return;
+            }
+            document.getElementById('levelBadge').textContent = 'Level ' + (curLevel + 1);
+            document.getElementById('verseRef').textContent = lv.ref;
+            document.getElementById('verseHint').textContent = '💡 ' + lv.text;
+            showScreen('introScreen');
+        }
+        function startLevel() {
+            clearGame(); timeLeft = 120; placedWords = []; villainState = null;
+            let lv = getCurrentLevel();
+            if (!lv) {
+                alert('시작할 레벨이 없습니다. 관리자 페이지에서 레벨을 확인해주세요.');
+                return;
+            }
+            setJohnRossMood('sad');
+            let words = lv.text.split(' ');
+            let slots = words.length;
+            document.getElementById('hudLevel').textContent = 'Lv.' + (curLevel + 1);
+            document.getElementById('hudScore').textContent = player.score;
+            document.getElementById('hudTimer').textContent = timeLeft;
+            document.getElementById('timerFill').style.width = '100%';
+            let pa = document.getElementById('pipeArea'); pa.innerHTML = '';
+            for (let i = 0; i < slots; i++) {
+                if (i > 0) { let c = document.createElement('div'); c.className = 'pipe-connector'; pa.appendChild(c) }
+                let s = document.createElement('div'); s.className = 'pipe-slot'; s.dataset.index = i; s.textContent = (i + 1);
+                s.onclick = function () { removeFromSlot(i) }; pa.appendChild(s)
+            }
+            let wa = document.getElementById('wordArea'); wa.innerHTML = '';
+            let shuffled = [...words]; for (let i = shuffled.length - 1; i > 0; i--) { let j = Math.floor(Math.random() * (i + 1));[shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]] }
+            shuffled.forEach((w, i) => {
+                let b = document.createElement('div'); b.className = 'word-block'; b.textContent = w; b.dataset.word = w; b.dataset.idx = i;
+                b.onclick = function () { placeWord(this) }; wa.appendChild(b)
+            });
+            showScreen('gameScreen');
+            startTimer();
+            let lvNum = curLevel + 1;
+            if (WOLF_LEVELS.includes(lvNum)) {
+                villainState = { hp: 300, maxHp: 300, timer: null, active: true };
+                villainState.timer = setTimeout(spawnVillain, 2000);
+            }
+            if (WIZARD_LEVELS.includes(lvNum)) {
+                var wizCfg = WIZARD_CONFIG[lvNum] || { hp: 100, count: 1 };
+                var count = wizCfg.count || 1;
+                wizardStates = [];
+                for (var w = 0; w < count; w++) {
+                    wizardStates.push({ hp: wizCfg.hp, maxHp: wizCfg.hp, attackTimer: null, spawnTimer: null, active: true });
+                }
+                for (var w = 0; w < wizardStates.length; w++) {
+                    (function (idx) {
+                        wizardStates[idx].spawnTimer = setTimeout(function () { spawnWizard(idx); }, 10000);
+                    })(w);
+                }
+            }
+        }
+        function placeWord(el) {
+            if (el.classList.contains('used') || el.querySelector('.villain-overlay')) return;
+            let slots = document.querySelectorAll('#pipeArea .pipe-slot');
+            let idx = -1; for (let i = 0; i < slots.length; i++) { if (!slots[i].classList.contains('filled')) { idx = i; break } }
+            if (idx === -1) return;
+            el.classList.add('used');
+            slots[idx].textContent = el.dataset.word;
+            slots[idx].classList.add('filled');
+            slots[idx].dataset.wordIdx = el.dataset.idx;
+            placedWords[idx] = el.dataset.word;
+            playPlace(); playClick();
+            let allFilled = true; for (let i = 0; i < slots.length; i++) { if (!slots[i].classList.contains('filled')) { allFilled = false; break } }
+            if (allFilled) checkAnswer()
+        }
+        function removeFromSlot(idx) {
+            let slots = document.querySelectorAll('#pipeArea .pipe-slot');
+            let slot = slots[idx]; if (!slot.classList.contains('filled')) return;
+            let wIdx = slot.dataset.wordIdx;
+            let blocks = document.querySelectorAll('#wordArea .word-block');
+            blocks.forEach(b => { if (b.dataset.idx === wIdx) b.classList.remove('used') });
+            slot.textContent = (idx + 1); slot.classList.remove('filled');
+            delete slot.dataset.wordIdx; placedWords[idx] = undefined;
+            playClick()
+        }
+        function checkAnswer() {
+            let lv = getCurrentLevel(); if (!lv) return;
+            let words = lv.text.split(' ');
+            let correct = true; let slots = document.querySelectorAll('#pipeArea .pipe-slot');
+            for (let i = 0; i < words.length; i++) { if (placedWords[i] !== words[i]) { correct = false; break } }
+            if (correct) {
+                slots.forEach(s => s.classList.add('correct'));
+                setJohnRossMood('happy');
+                clearInterval(timer); if (villainState) { clearTimeout(villainState.timer); villainState.active = false; }
+                if (wizardStates) {
+                    wizardStates.forEach(function (ws) { if (ws.attackTimer) clearInterval(ws.attackTimer); if (ws.spawnTimer) clearTimeout(ws.spawnTimer); });
+                    wizardStates = null;
+                }
+                var wiz = document.getElementById('wizardContainer'); if (wiz) { wiz.innerHTML = ''; wiz.style.display = 'none'; }
+                var wiz2 = document.getElementById('wizardContainer2'); if (wiz2) { wiz2.innerHTML = ''; wiz2.style.display = 'none'; }
+                let bonus = Math.floor(timeLeft * 10); player.score += bonus + (curLevel + 1) * 100;
+                playCorrect(); setTimeout(() => playClear(), 500);
+                setTimeout(() => showClear(), 1200);
+            } else {
+                playWrong();
+                slots.forEach(s => {
+                    s.style.background = 'linear-gradient(180deg,#f44336,#c62828)';
+                    setTimeout(() => {
+                        if (s.classList.contains('filled')) s.style.background = 'linear-gradient(180deg,#b0b0b0,#808080)';
+                        else s.style.background = 'rgba(139,90,43,.6)'
+                    }, 500)
+                })
+            }
+        }
+        function showClear() {
+            let lv = getCurrentLevel();
+            if (!lv) return;
+            const levelsArr = getCurrentLevelsArray();
+            const isLast = levelsArr && levelsArr.length > 0 && curLevel >= levelsArr.length - 1;
+            document.getElementById('clearTitle').textContent = 'Level ' + (curLevel + 1) + ' 클리어! 🎉';
+            document.getElementById('clearVerse').textContent = '📖 ' + lv.ref + '\n' + lv.text;
+            document.getElementById('clearScore').textContent = '점수: ' + player.score + '점 | 남은 시간: ' + timeLeft + '초';
+            document.getElementById('nextLevelBtn').textContent = isLast ? '엔딩 보기 ▶' : '다음 레벨 ▶';
+            showScreen('clearScreen');
+            if (isLast) saveScore();
+        }
+        function nextLevel() {
+            const levelsArr = getCurrentLevelsArray();
+            if (!levelsArr || levelsArr.length === 0) { showRanking(); return }
+            if (curLevel >= levelsArr.length - 1) {
+                showEnding();
+                return;
+            }
+            curLevel++; showIntro()
+        }
+        function startTimer() {
+            timer = setInterval(() => {
+                timeLeft--; if (timeLeft < 0) timeLeft = 0;
+                document.getElementById('hudTimer').textContent = timeLeft;
+                document.getElementById('timerFill').style.width = (timeLeft / 120 * 100) + '%';
+                if (timeLeft <= 30) document.getElementById('timerFill').style.background = 'linear-gradient(90deg,#f44,#ff6)';
+                if (timeLeft <= 0) { clearInterval(timer); gameOver() }
+            }, 1000)
+        }
+        function gameOver() {
+            clearInterval(timer); if (villainState) clearTimeout(villainState.timer);
+            if (wizardStates) { wizardStates.forEach(function (ws) { if (ws.attackTimer) clearInterval(ws.attackTimer); if (ws.spawnTimer) clearTimeout(ws.spawnTimer); }); }
+            saveScore();
+            let lv = getCurrentLevel();
+            let ref = lv ? lv.ref : '';
+            let text = lv ? lv.text : '';
+            let ov = document.createElement('div'); ov.className = 'game-over-overlay';
+            ov.innerHTML = '<h2>⏱ 게임 오버!</h2><p style="margin:12px 0;color:rgba(255,255,255,.7)">' + ref + '</p><p style="margin-bottom:20px;font-size:.9rem;color:rgba(255,255,255,.5)">' + text + '</p><p style="margin-bottom:16px;color:#fda085">최종 점수: ' + player.score + '점 (Lv.' + (curLevel + 1) + ')</p><div class="controls-row"><button class="btn btn-primary" onclick="restartLevel()">다시 시도 🔄</button><button class="btn btn-secondary" onclick="backToIntro()">레벨 선택</button></div>';
+            document.getElementById('gameScreen').appendChild(ov)
+        }
+        function endGameEarly() {
+            let conf = confirm('현재 진행 상태에서 종료하고 점수를 등록하시겠습니까?');
+            if (conf) { clearInterval(timer); saveScore(); showRanking(); }
+        }
+        function restartLevel() { clearGame(); startLevel() }
+        function backToIntro() { clearGame(); showIntro() }
+        function clearGame() {
+            clearInterval(timer); if (villainState) clearTimeout(villainState.timer);
+            if (wizardStates) {
+                wizardStates.forEach(function (ws) { if (ws.attackTimer) clearInterval(ws.attackTimer); if (ws.spawnTimer) clearTimeout(ws.spawnTimer); });
+            }
+            wizardStates = null;
+            var wiz = document.getElementById('wizardContainer');
+            if (wiz) { wiz.innerHTML = ''; wiz.style.display = 'none'; }
+            var wiz2 = document.getElementById('wizardContainer2');
+            if (wiz2) { wiz2.innerHTML = ''; wiz2.style.display = 'none'; }
+            let ov = document.querySelector('.game-over-overlay'); if (ov) ov.remove();
+            document.getElementById('pipeArea').innerHTML = ''; document.getElementById('wordArea').innerHTML = '';
+        }
+        function showEnding() {
+            clearGame();
+            var code = generateGiftCode();
+            var runStart = 0;
+            try { runStart = parseInt(sessionStorage.getItem('pipeGameRunStartTime') || '0', 10); } catch (e) { }
+            var durationSeconds = runStart > 0 ? Math.round((Date.now() - runStart) / 1000) : null;
+            var log = getGiftCodeLog();
+            log = Array.isArray(log) ? log.slice() : [];
+            log.push({
+                name: player.name,
+                grade: player.grade,
+                code: code,
+                date: new Date().toLocaleString('ko-KR'),
+                durationSeconds: durationSeconds
+            });
+            try { localStorage.setItem(STORAGE_KEYS.giftCodeLog, JSON.stringify(log)); } catch (e) { }
+            var box = document.getElementById('endingGiftCodeBox');
+            var codeEl = document.getElementById('endingGiftCode');
+            if (box && codeEl) {
+                codeEl.textContent = code;
+                box.style.display = 'block';
+            }
+            showScreen('endingScreen');
+        }
+        function generateGiftCode() {
+            var letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+            var code = '';
+            for (var i = 0; i < 3; i++) code += letters.charAt(Math.floor(Math.random() * letters.length));
+            for (var j = 0; j < 3; j++) code += Math.floor(Math.random() * 10);
+            return code;
+        }
+        function getGiftCodeLog() {
+            try {
+                var saved = JSON.parse(localStorage.getItem(STORAGE_KEYS.giftCodeLog) || '[]');
+                return Array.isArray(saved) ? saved : [];
+            } catch (e) { return []; }
+        }
+        function spawnVillain() {
+            if (!villainState || !villainState.active || villainState.hp <= 0 || !document.getElementById('gameScreen').classList.contains('active')) return;
+            let blocks = Array.from(document.querySelectorAll('#wordArea .word-block')).filter(b => !b.classList.contains('used') && !b.querySelector('.villain-overlay'));
+            if (blocks.length === 0) { villainState.timer = setTimeout(spawnVillain, 4000); return; }
+            let target = blocks[Math.floor(Math.random() * blocks.length)];
+            let overlay = document.createElement('div'); overlay.className = 'villain-overlay';
+            overlay.innerHTML = '<img src="assets/images/villain.png" class="villain-img" alt="villain"><div class="villain-hp-bar"><div class="villain-hp-fill" style="width:' + (villainState.hp / villainState.maxHp * 100) + '%"></div></div>';
+
+            overlay.onclick = function (e) {
+                e.stopPropagation();
+                villainState.hp -= 30; if (villainState.hp < 0) villainState.hp = 0;
+                overlay.querySelector('.villain-hp-fill').style.width = (villainState.hp / villainState.maxHp * 100) + '%';
+                playPunch();
+                let hit = document.createElement('div'); hit.className = 'hit-effect'; hit.textContent = '💥';
+                hit.style.left = (e.clientX - 20) + 'px'; hit.style.top = (e.clientY - 20) + 'px';
+                document.body.appendChild(hit); setTimeout(() => hit.remove(), 600);
+                if (villainState.hp <= 0) {
+                    clearTimeout(villainState.timer); overlay.style.opacity = '0';
+                    setTimeout(() => overlay.remove(), 300); player.score += 200; playCrack();
+                }
+            };
+            target.appendChild(overlay);
+            playWolfHowl();
+            villainState.timer = setTimeout(() => {
+                if (villainState.hp > 0 && overlay.parentNode) {
+                    overlay.style.opacity = '0';
+                    setTimeout(() => { if (overlay.parentNode) overlay.remove(); }, 300);
+                    villainState.timer = setTimeout(spawnVillain, 4000);
+                }
+            }, 4000);
+        }
+        function showTimePenaltyEffect() {
+            var el = document.createElement('div');
+            el.className = 'time-penalty-effect';
+            el.textContent = '-10초';
+            document.body.appendChild(el);
+            setTimeout(function () { if (el.parentNode) el.remove(); }, 1200);
+        }
+        function wizardAttack(idx) {
+            if (!wizardStates || !wizardStates[idx] || !wizardStates[idx].active || wizardStates[idx].hp <= 0) return;
+            if (!document.getElementById('gameScreen').classList.contains('active')) return;
+            timeLeft -= 10;
+            if (timeLeft < 0) timeLeft = 0;
+            document.getElementById('hudTimer').textContent = timeLeft;
+            document.getElementById('timerFill').style.width = (timeLeft / 120 * 100) + '%';
+            if (timeLeft <= 30) document.getElementById('timerFill').style.background = 'linear-gradient(90deg,#f44,#ff6)';
+            showTimePenaltyEffect();
+            playWizardAttack();
+            if (timeLeft <= 0) gameOver();
+        }
+        function spawnWizard(idx) {
+            if (!wizardStates || !wizardStates[idx] || !wizardStates[idx].active || wizardStates[idx].hp <= 0) return;
+            var state = wizardStates[idx];
+            if (state.spawnTimer) { clearTimeout(state.spawnTimer); state.spawnTimer = null; }
+            var container = document.getElementById(idx === 0 ? 'wizardContainer' : 'wizardContainer2');
+            if (!container) return;
+            container.innerHTML = '<img src="assets/images/wizard.png" class="wizard-img" alt="wizard"><div class="wizard-hp-bar"><div class="wizard-hp-fill" style="width:' + (state.hp / state.maxHp * 100) + '%"></div></div>';
+            container.style.display = 'flex';
+            var fillEl = container.querySelector('.wizard-hp-fill');
+            container.onclick = function (e) {
+                e.stopPropagation();
+                if (!state || state.hp <= 0) return;
+                state.hp -= 25;
+                if (state.hp < 0) state.hp = 0;
+                fillEl.style.width = (state.hp / state.maxHp * 100) + '%';
+                playPunch();
+                var hit = document.createElement('div');
+                hit.className = 'hit-effect';
+                hit.textContent = '💥';
+                hit.style.left = (e.clientX - 20) + 'px';
+                hit.style.top = (e.clientY - 20) + 'px';
+                document.body.appendChild(hit);
+                setTimeout(function () { hit.remove(); }, 600);
+                if (state.hp <= 0) {
+                    if (state.attackTimer) clearInterval(state.attackTimer);
+                    state.active = false;
+                    container.style.opacity = '0';
+                    setTimeout(function () {
+                        container.innerHTML = '';
+                        container.style.display = 'none';
+                        container.style.opacity = '1';
+                    }, 300);
+                    player.score += 150;
+                    playCrack();
+                }
+            };
+            state.attackTimer = setInterval(function () { wizardAttack(idx); }, 3000);
+        }
+        function saveScore() {
+            let ranks = JSON.parse(localStorage.getItem(STORAGE_KEYS.ranks) || '[]');
+            ranks.push({ name: player.name, grade: player.grade, score: player.score, level: curLevel + 1, date: new Date().toLocaleDateString('ko-KR') });
+            ranks.sort((a, b) => b.score - a.score); if (ranks.length > 20) ranks = ranks.slice(0, 20);
+            localStorage.setItem(STORAGE_KEYS.ranks, JSON.stringify(ranks));
+        }
+
+        function getRanks() {
+            return JSON.parse(localStorage.getItem(STORAGE_KEYS.ranks) || '[]');
+        }
+
+        function renderRankList() {
+            let ranks = getRanks();
+            let list = document.getElementById('rankList'); list.innerHTML = '';
+            if (ranks.length === 0) {
+                list.innerHTML = '<p style="text-align:center;color:rgba(255,255,255,.5)">아직 기록이 없습니다</p>';
+                return;
+            }
+            ranks.forEach((r, i) => {
+                let medal = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : (i + 1);
+                let d = document.createElement('div'); d.className = 'rank-item';
+                d.innerHTML = '<div class="rank-num">' + medal + '</div><div class="rank-info"><div class="rank-name">' + r.name + '</div><div class="rank-grade">' + r.grade + ' | ' + r.date + '</div></div><div class="rank-score">' + r.score + '점</div>';
+                list.appendChild(d)
+            });
+        }
+
+        function renderAdminRankSummary() {
+            const el = document.getElementById('adminRankSummary');
+            if (!el) return;
+            const ranks = getRanks();
+            if (!ranks || ranks.length === 0) {
+                el.textContent = '등록된 랭킹이 아직 없습니다.';
+                return;
+            }
+            const top = ranks[0];
+            el.textContent = '총 ' + ranks.length + '개 기록, 최고 점수 ' + top.score + '점 (' + top.name + ', Lv.' + top.level + ')';
+        }
+
+        function renderAdminGiftCodeList() {
+            const el = document.getElementById('adminGiftCodeList');
+            if (!el) return;
+            const log = getGiftCodeLog();
+            if (!log || log.length === 0) {
+                el.innerHTML = '<p style="font-size:.85rem;color:rgba(255,255,255,.7)">아직 수령 기록이 없습니다.</p>';
+                return;
+            }
+            el.innerHTML = '<table class="gift-code-table"><thead><tr><th>이름</th><th>반</th><th>코드</th><th>수령 일시</th><th>소요 시간</th></tr></thead><tbody></tbody></table>';
+            const tbody = el.querySelector('tbody');
+            log.forEach(function (entry) {
+                const tr = document.createElement('tr');
+                var dur = entry.durationSeconds != null ? entry.durationSeconds + '초' : '-';
+                tr.innerHTML = '<td>' + (entry.name || '-') + '</td><td>' + (entry.grade || '-') + '</td><td><code>' + (entry.code || '') + '</code></td><td>' + (entry.date || '') + '</td><td>' + dur + '</td>';
+                tbody.appendChild(tr);
+            });
+        }
+
+        function resetAllRanks() {
+            if (!confirm('랭킹 기록을 모두 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.')) return;
+            localStorage.removeItem(STORAGE_KEYS.ranks);
+            renderAdminRankSummary();
+            alert('랭킹이 초기화되었습니다.');
+        }
+
+        function showRanking() {
+            let act = document.querySelector('.screen.active');
+            if (act && act.id !== 'rankScreen') prevScreen = act.id;
+            renderRankList();
+            renderAdminRankSummary();
+            showScreen('rankScreen');
+        }
+
+        function backFromRanking() { showScreen(prevScreen || 'loginScreen') }
+
+        function openAdmin() {
+            const pwd = prompt('관리자 암호를 입력하세요');
+            if (pwd !== ADMIN_PASSWORD) {
+                alert('암호가 올바르지 않습니다.');
+                return;
+            }
+            loadLevelPool();
+            loadGlobalStatus();
+            updateAdminStatusText();
+            renderAdminLevelList();
+            renderAdminRankSummary();
+            renderAdminGiftCodeList();
+            showScreen('adminScreen');
+        }
+
+        function setGlobalGameActive(active) {
+            globalStatus = { active: !!active, updatedAt: new Date().toISOString() };
+            localStorage.setItem(STORAGE_KEYS.globalStatus, JSON.stringify(globalStatus));
+            updateAdminStatusText();
+        }
+
+        function addNewLevel() {
+            const ref = prompt('새 성구 (예: 창세기 1:1)');
+            if (!ref) return;
+            const text = prompt('말씀 내용을 입력하세요');
+            if (!text) return;
+            const group = (prompt('대상 그룹 (믿음반/사랑반/소망반/축복반/다니엘반/공통)', '공통') || '공통').trim();
+            levelPool.push({ ref: ref.trim(), text: text.trim(), group: group || '공통', enabled: true });
+            saveLevelPool();
+            renderAdminLevelList();
+        }
+
+        function resetLevelsToDefault() {
+            if (!confirm('기본 말씀 목록으로 초기화하시겠습니까? (직접 추가한 내용은 사라집니다)')) return;
+            levelPool = DEFAULT_LEVELS.map(lv => ({ ref: lv.ref, text: lv.text, group: lv.group || '공통', enabled: true }));
+            saveLevelPool();
+            renderAdminLevelList();
+        }
+
+        function renderAdminLevelList() {
+            const listEl = document.getElementById('adminLevelList');
+            if (!listEl) return;
+            listEl.innerHTML = '';
+            if (!levelPool || levelPool.length === 0) {
+                listEl.innerHTML = '<p style="font-size:.85rem;color:rgba(255,255,255,.7)">등록된 말씀이 없습니다.</p>';
+                return;
+            }
+            levelPool.forEach((lv, index) => {
+                const enabled = lv.enabled !== false;
+                const groupLabel = lv.group || '공통';
+                const item = document.createElement('div');
+                item.className = 'level-item';
+                item.innerHTML =
+                    '<div class="level-item-header">' +
+                    '<div>' + (index + 1) + '. [' + groupLabel + '] ' + (lv.ref || '(미지정)') + '</div>' +
+                    '<span class="chip" style="background:' + (enabled ? 'rgba(76,175,80,.3)' : 'rgba(244,67,54,.3)') + '">' + (enabled ? '사용' : '비활성') + '</span>' +
+                    '</div>' +
+                    '<div>' + (lv.text || '') + '</div>' +
+                    '<div class="level-item-actions">' +
+                    '<button class="btn btn-secondary btn-small" data-action="edit" data-index="' + index + '">수정</button>' +
+                    '<button class="btn btn-secondary btn-small" data-action="toggle" data-index="' + index + '">ON/OFF</button>' +
+                    '</div>';
+                listEl.appendChild(item);
+            });
+        }
+
+        function backToLogin() {
+            clearGame();
+            showScreen('loginScreen');
+        }
+
+        function tryReloadGame() {
+            loadGlobalStatus();
+            if (!isGameActive()) {
+                alert('아직 게임이 열리지 않았어요. 조금 후에 다시 시도해주세요.');
+                return;
+            }
+            showScreen('loginScreen');
+        }
+
+        document.getElementById('adminLevelList').addEventListener('click', function (e) {
+            const btn = e.target.closest('button[data-action]');
+            if (!btn) return;
+            const idx = parseInt(btn.dataset.index, 10);
+            if (Number.isNaN(idx) || !levelPool[idx]) return;
+            const action = btn.dataset.action;
+            if (action === 'edit') {
+                const current = levelPool[idx];
+                const newRef = prompt('성구 (예: 창세기 1:1)', current.ref || '');
+                if (newRef === null) return;
+                const newText = prompt('말씀 내용', current.text || '');
+                if (newText === null) return;
+                const newGroup = prompt('대상 그룹 (믿음반/사랑반/소망반/축복반/다니엘반/공통)', current.group || '공통');
+                if (newGroup === null) return;
+                levelPool[idx] = {
+                    ref: newRef.trim(),
+                    text: newText.trim(),
+                    group: (newGroup.trim() || '공통'),
+                    enabled: current.enabled !== false
+                };
+                saveLevelPool();
+                renderAdminLevelList();
+            } else if (action === 'toggle') {
+                levelPool[idx].enabled = !(levelPool[idx].enabled !== false);
+                saveLevelPool();
+                renderAdminLevelList();
+            }
+        });
+
+        document.addEventListener('keydown', e => { if (e.key === 'Escape') { let gs = document.getElementById('gameScreen'); if (gs.classList.contains('active')) backToIntro() } });
+    </script>
+</body>
+
+</html>

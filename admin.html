@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>관리자 페이지 - 말씀 찾기</title>
+    <style>
+        * { box-sizing: border-box; }
+        body { font-family: 'Malgun Gothic', sans-serif; margin: 0; padding: 20px; background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%); min-height: 100vh; color: #fff; }
+        .admin-gate { max-width: 360px; margin: 40px auto; padding: 24px; background: rgba(255,255,255,.08); border-radius: 16px; text-align: center; }
+        .admin-gate h2 { margin-bottom: 16px; font-size: 1.3rem; }
+        .admin-gate input { width: 100%; padding: 12px; margin-bottom: 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,.2); background: rgba(255,255,255,.1); color: #fff; }
+        .admin-gate button { padding: 10px 20px; border-radius: 8px; border: none; background: #4CAF50; color: #fff; cursor: pointer; }
+        .admin-gate button:disabled { opacity: .6; cursor: not-allowed; }
+        .admin-body { display: none; max-width: 900px; margin: 0 auto; }
+        .admin-body.visible { display: block; }
+        .admin-box { padding: 20px; }
+        .admin-box h2 { margin-bottom: 20px; font-size: 1.5rem; }
+        .admin-section { margin-bottom: 24px; padding: 16px; background: rgba(255,255,255,.06); border-radius: 12px; }
+        .admin-section h3 { margin: 0 0 12px 0; font-size: 1.1rem; color: rgba(255,255,255,.9); }
+        .admin-label { font-size: .9rem; color: rgba(255,255,255,.7); margin-bottom: 8px; }
+        .admin-section table { width: 100%; border-collapse: collapse; font-size: .9rem; }
+        .admin-section th, .admin-section td { padding: 8px 10px; text-align: left; border-bottom: 1px solid rgba(255,255,255,.15); }
+        .admin-section th { color: rgba(255,255,255,.7); font-weight: 600; }
+        .admin-section code { background: rgba(255,255,255,.15); padding: 2px 6px; border-radius: 4px; }
+        .btn { padding: 8px 14px; border-radius: 8px; border: none; cursor: pointer; font-size: .9rem; }
+        .btn-primary { background: #4CAF50; color: #fff; }
+        .btn-secondary { background: rgba(255,255,255,.2); color: #fff; }
+        .btn-small { padding: 6px 10px; font-size: .85rem; }
+        .level-item { padding: 10px; margin-bottom: 8px; background: rgba(0,0,0,.2); border-radius: 8px; }
+        .level-item-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; }
+        .level-item-actions { margin-top: 6px; display: flex; gap: 6px; }
+        .chip { font-size: .75rem; padding: 2px 8px; border-radius: 10px; }
+        .back-link { display: inline-block; margin-top: 16px; color: #81d4fa; text-decoration: none; }
+        .back-link:hover { text-decoration: underline; }
+    </style>
+</head>
+<body>
+    <div class="admin-gate" id="adminGate">
+        <h2>🔐 관리자 로그인</h2>
+        <input type="password" id="adminPassword" placeholder="암호 입력" autocomplete="off">
+        <div style="margin-top:12px">
+            <button class="btn btn-primary" id="adminLoginBtn">입장</button>
+        </div>
+    </div>
+    <div class="admin-body" id="adminBody">
+        <div class="admin-box">
+            <h2>관리자 페이지</h2>
+            <div class="admin-section">
+                <h3>게임 전체 상태</h3>
+                <div class="admin-label">현재 상태: <span id="adminGameStatusText">-</span></div>
+                <div style="margin-top:8px;display:flex;gap:8px">
+                    <button class="btn btn-primary btn-small" id="btnGameOn">게임 시작 상태로</button>
+                    <button class="btn btn-secondary btn-small" id="btnGameOff">게임 전체 멈춤</button>
+                </div>
+            </div>
+            <div class="admin-section">
+                <h3>참여자 랭킹</h3>
+                <div class="admin-label">전체 참여자 점수 순위</div>
+                <div id="adminRankTableWrap"></div>
+                <div style="margin-top:8px">
+                    <button class="btn btn-secondary btn-small" id="btnResetRanks">랭킹 전체 초기화</button>
+                </div>
+            </div>
+            <div class="admin-section">
+                <h3>선물 코드 수령 현황</h3>
+                <div class="admin-label">엔딩 도달 사용자 · 코드 · 소요 시간</div>
+                <div id="adminGiftCodeTableWrap"></div>
+            </div>
+            <div class="admin-section">
+                <h3>레벨 에디터 (말씀 목록)</h3>
+                <div class="admin-label">말씀 목록 수정 및 ON/OFF</div>
+                <div id="adminLevelList"></div>
+                <div style="margin-top:10px">
+                    <button class="btn btn-primary btn-small" id="btnAddLevel">새 말씀 추가</button>
+                    <button class="btn btn-secondary btn-small" id="btnResetLevels">기본 말씀으로 초기화</button>
+                </div>
+            </div>
+            <a href="index.html" class="back-link">← 게임 화면으로 돌아가기</a>
+        </div>
+    </div>
+    <script>
+        var STORAGE_KEYS = {
+            ranks: 'pipeGameRanks',
+            levels: 'pipeGameLevels',
+            globalStatus: 'pipeGameGlobalStatus',
+            giftCodeLog: 'pipeGameGiftCodeLog'
+        };
+        var ADMIN_PASSWORD = 'HelocK862@';
+        var DEFAULT_LEVELS = [
+            { ref: "창세기 1:1", text: "태초에 하나님이 천지를 창조하시니라", group: "공통" },
+            { ref: "시편 23:1", text: "여호와는 나의 목자시니 내게 부족함이 없으리로다", group: "공통" },
+            { ref: "잠언 3:5", text: "너는 마음을 다하여 여호와를 신뢰하고 네 명철을 의지하지 말라", group: "공통" },
+            { ref: "요한복음 3:16", text: "하나님이 세상을 이처럼 사랑하사 독생자를 주셨으니 이는 그를 믿는 자마다 멸망하지 않고 영생을 얻게 하려 하심이라", group: "공통" },
+            { ref: "빌립보서 4:13", text: "내게 능력 주시는 자 안에서 내가 모든 것을 할 수 있느니라", group: "공통" },
+            { ref: "여호수아 1:9", text: "내가 네게 명한 것이 아니냐 강하고 담대하라 두려워하지 말며 놀라지 말라", group: "공통" },
+            { ref: "로마서 8:28", text: "우리가 알거니와 하나님을 사랑하는 자 곧 그의 뜻대로 부르심을 입은 자들에게는 모든 것이 합력하여 선을 이루느니라", group: "공통" },
+            { ref: "이사야 41:10", text: "두려워하지 말라 내가 너와 함께 함이라 놀라지 말라 나는 네 하나님이 됨이라", group: "공통" },
+            { ref: "마태복음 28:20", text: "내가 세상 끝날까지 너희와 항상 함께 있으리라", group: "공통" },
+            { ref: "시편 119:105", text: "주의 말씀은 내 발에 등이요 내 길에 빛이니이다", group: "공통" },
+            { ref: "잠언 22:6", text: "마땅히 행할 길을 아이에게 가르치라 그리하면 늙어도 그것을 떠나지 아니하리라", group: "공통" },
+            { ref: "히브리서 11:1", text: "믿음은 바라는 것들의 실상이요 보이지 않는 것들의 증거니", group: "공통" },
+            { ref: "예레미야 29:11", text: "너희를 향한 나의 생각을 내가 아노라 평안이요 재앙이 아니니라", group: "공통" },
+            { ref: "시편 46:1", text: "하나님은 우리의 피난처시요 힘이시니 환난 중에 만날 큰 도움이시라", group: "공통" },
+            { ref: "갈라디아서 5:22", text: "오직 성령의 열매는 사랑과 희락과 화평과 오래 참음과 자비와 양선과 충성과 온유와 절제니", group: "공통" },
+            { ref: "고린도전서 13:4", text: "사랑은 오래 참고 사랑은 온유하며 시기하지 아니하며 자랑하지 아니하며 교만하지 아니하며", group: "공통" },
+            { ref: "에베소서 2:8", text: "너희는 그 은혜에 의하여 믿음으로 말미암아 구원을 받았으니 이것은 너희에게서 난 것이 아니요 하나님의 선물이라", group: "공통" },
+            { ref: "시편 37:4", text: "또한 여호와를 기뻐하라 그가 네 마음의 소원을 네게 이루어 주시리로다", group: "공통" },
+            { ref: "디모데후서 1:7", text: "하나님이 우리에게 주신 것은 두려워하는 마음이 아니요 능력과 사랑과 절제하는 마음이니", group: "공통" },
+            { ref: "시편 150:6", text: "호흡이 있는 자마다 여호와를 찬양할지어다 할렐루야", group: "공통" }
+        ];
+        var levelPool = [];
+
+        function getRanks() {
+            try { return JSON.parse(localStorage.getItem(STORAGE_KEYS.ranks) || '[]'); } catch (e) { return []; }
+        }
+        function getGiftCodeLog() {
+            try { var s = localStorage.getItem(STORAGE_KEYS.giftCodeLog) || '[]'; return JSON.parse(s); } catch (e) { return []; }
+        }
+        function getGlobalStatus() {
+            try { var s = localStorage.getItem(STORAGE_KEYS.globalStatus) || 'null'; return JSON.parse(s); } catch (e) { return { active: true }; }
+        }
+        function loadLevelPool() {
+            try {
+                var saved = JSON.parse(localStorage.getItem(STORAGE_KEYS.levels) || 'null');
+                if (Array.isArray(saved) && saved.length > 0) {
+                    levelPool = saved.map(function (lv) {
+                        return { ref: lv.ref, text: lv.text, group: lv.group || '공통', enabled: lv.enabled !== false };
+                    });
+                } else {
+                    levelPool = DEFAULT_LEVELS.map(function (lv) { return { ref: lv.ref, text: lv.text, group: lv.group || '공통', enabled: true }; });
+                }
+            } catch (e) {
+                levelPool = DEFAULT_LEVELS.map(function (lv) { return { ref: lv.ref, text: lv.text, group: lv.group || '공통', enabled: true }; });
+            }
+        }
+        function saveLevelPool() {
+            try { localStorage.setItem(STORAGE_KEYS.levels, JSON.stringify(levelPool)); } catch (e) { }
+        }
+
+        function renderGameStatus() {
+            var el = document.getElementById('adminGameStatusText');
+            if (!el) return;
+            var gs = getGlobalStatus();
+            el.textContent = gs && gs.active !== false ? '진행 중' : '멈춤 (접속 차단)';
+        }
+        function renderRankTable() {
+            var wrap = document.getElementById('adminRankTableWrap');
+            if (!wrap) return;
+            var ranks = getRanks();
+            if (!ranks.length) {
+                wrap.innerHTML = '<p style="color:rgba(255,255,255,.6)">등록된 랭킹이 없습니다.</p>';
+                return;
+            }
+            var html = '<table><thead><tr><th>순위</th><th>이름</th><th>반</th><th>점수</th><th>레벨</th><th>날짜</th></tr></thead><tbody>';
+            ranks.forEach(function (r, i) {
+                var medal = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : (i + 1);
+                html += '<tr><td>' + medal + '</td><td>' + (r.name || '-') + '</td><td>' + (r.grade || '-') + '</td><td>' + (r.score || 0) + '점</td><td>Lv.' + (r.level || 1) + '</td><td>' + (r.date || '') + '</td></tr>';
+            });
+            html += '</tbody></table>';
+            wrap.innerHTML = html;
+        }
+        function renderGiftCodeTable() {
+            var wrap = document.getElementById('adminGiftCodeTableWrap');
+            if (!wrap) return;
+            var log = getGiftCodeLog();
+            if (!log || !log.length) {
+                wrap.innerHTML = '<p style="color:rgba(255,255,255,.6)">아직 수령 기록이 없습니다.</p>';
+                return;
+            }
+            var html = '<table><thead><tr><th>이름</th><th>반</th><th>코드</th><th>수령 일시</th><th>소요 시간</th></tr></thead><tbody>';
+            log.forEach(function (entry) {
+                var dur = entry.durationSeconds != null ? entry.durationSeconds + '초' : '-';
+                html += '<tr><td>' + (entry.name || '-') + '</td><td>' + (entry.grade || '-') + '</td><td><code>' + (entry.code || '') + '</code></td><td>' + (entry.date || '') + '</td><td>' + dur + '</td></tr>';
+            });
+            html += '</tbody></table>';
+            wrap.innerHTML = html;
+        }
+        function renderLevelList() {
+            var listEl = document.getElementById('adminLevelList');
+            if (!listEl) return;
+            listEl.innerHTML = '';
+            if (!levelPool.length) {
+                listEl.innerHTML = '<p style="color:rgba(255,255,255,.6)">등록된 말씀이 없습니다.</p>';
+                return;
+            }
+            levelPool.forEach(function (lv, index) {
+                var enabled = lv.enabled !== false;
+                var groupLabel = lv.group || '공통';
+                var item = document.createElement('div');
+                item.className = 'level-item';
+                item.innerHTML = '<div class="level-item-header"><div>' + (index + 1) + '. [' + groupLabel + '] ' + (lv.ref || '(미지정)') + '</div><span class="chip" style="background:' + (enabled ? 'rgba(76,175,80,.3)' : 'rgba(244,67,54,.3)') + '">' + (enabled ? '사용' : '비활성') + '</span></div><div>' + (lv.text || '') + '</div><div class="level-item-actions"><button class="btn btn-secondary btn-small" data-action="edit" data-index="' + index + '">수정</button><button class="btn btn-secondary btn-small" data-action="toggle" data-index="' + index + '">ON/OFF</button></div>';
+                listEl.appendChild(item);
+            });
+        }
+
+        function setGameActive(active) {
+            try {
+                localStorage.setItem(STORAGE_KEYS.globalStatus, JSON.stringify({ active: !!active, updatedAt: new Date().toISOString() }));
+                renderGameStatus();
+            } catch (e) { }
+        }
+
+        document.getElementById('adminLoginBtn').onclick = function () {
+            var pwd = document.getElementById('adminPassword').value;
+            if (pwd !== ADMIN_PASSWORD) {
+                alert('암호가 올바르지 않습니다.');
+                return;
+            }
+            sessionStorage.setItem('pipeAdminAuth', '1');
+            document.getElementById('adminGate').style.display = 'none';
+            document.getElementById('adminBody').classList.add('visible');
+            loadLevelPool();
+            renderGameStatus();
+            renderRankTable();
+            renderGiftCodeTable();
+            renderLevelList();
+        };
+
+        if (sessionStorage.getItem('pipeAdminAuth') === '1') {
+            document.getElementById('adminGate').style.display = 'none';
+            document.getElementById('adminBody').classList.add('visible');
+            loadLevelPool();
+            renderGameStatus();
+            renderRankTable();
+            renderGiftCodeTable();
+            renderLevelList();
+        }
+
+        document.getElementById('btnGameOn').onclick = function () { setGameActive(true); };
+        document.getElementById('btnGameOff').onclick = function () { setGameActive(false); };
+        document.getElementById('btnResetRanks').onclick = function () {
+            if (!confirm('랭킹 기록을 모두 삭제하시겠습니까?')) return;
+            localStorage.removeItem(STORAGE_KEYS.ranks);
+            renderRankTable();
+            alert('랭킹이 초기화되었습니다.');
+        };
+
+        document.getElementById('adminLevelList').addEventListener('click', function (e) {
+            var btn = e.target.closest('button[data-action]');
+            if (!btn) return;
+            var idx = parseInt(btn.dataset.index, 10);
+            if (isNaN(idx) || !levelPool[idx]) return;
+            var action = btn.dataset.action;
+            if (action === 'edit') {
+                var cur = levelPool[idx];
+                var newRef = prompt('성구 (예: 창세기 1:1)', cur.ref || '');
+                if (newRef === null) return;
+                var newText = prompt('말씀 내용', cur.text || '');
+                if (newText === null) return;
+                var newGroup = prompt('대상 그룹 (믿음반/사랑반/소망반/축복반/다니엘반/공통)', cur.group || '공통');
+                if (newGroup === null) return;
+                levelPool[idx] = { ref: newRef.trim(), text: newText.trim(), group: (newGroup.trim() || '공통'), enabled: cur.enabled !== false };
+                saveLevelPool();
+                renderLevelList();
+            } else if (action === 'toggle') {
+                levelPool[idx].enabled = !(levelPool[idx].enabled !== false);
+                saveLevelPool();
+                renderLevelList();
+            }
+        });
+        document.getElementById('btnAddLevel').onclick = function () {
+            var ref = prompt('새 성구 (예: 창세기 1:1)');
+            if (!ref) return;
+            var text = prompt('말씀 내용을 입력하세요');
+            if (!text) return;
+            var group = (prompt('대상 그룹 (믿음반/사랑반/소망반/축복반/다니엘반/공통)', '공통') || '공통').trim();
+            levelPool.push({ ref: ref.trim(), text: text.trim(), group: group || '공통', enabled: true });
+            saveLevelPool();
+            renderLevelList();
+        };
+        document.getElementById('btnResetLevels').onclick = function () {
+            if (!confirm('기본 말씀 목록으로 초기화하시겠습니까?')) return;
+            levelPool = DEFAULT_LEVELS.map(function (lv) { return { ref: lv.ref, text: lv.text, group: lv.group || '공통', enabled: true }; });
+            saveLevelPool();
+            renderLevelList();
+            alert('기본 말씀으로 초기화했습니다.');
+        };
+    </script>
+</body>
+</html>
