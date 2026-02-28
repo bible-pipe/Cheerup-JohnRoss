@@ -9,7 +9,7 @@
         (function () {
             var base = document.createElement('base');
             if (window.location.hostname.indexOf('github.io') !== -1)
-                base.href = 'https://bible-pipe.github.io/find-the-words/';
+                base.href = 'https://bible-pipe.github.io/Cheerup-JohnRoss/';
             else {
                 var p = window.location.pathname;
                 base.href = (p.replace(/\/[^/]*$/, '/') || '/');
@@ -1228,13 +1228,13 @@
         let player = { name: '', grade: '', score: 0 };
         let curLevel = 0, timeLeft = 120, timer = null, placedWords = [], villainState = null, wizardStates = null, bgmPlaying = false, prevScreen = 'loginScreen', globalStatus = { active: true }, storyShown = false;
         let loginBgmAudio = null, mainBgmAudio = null, endingBgmAudio = null;
-        function getLoginBgm() { if (!loginBgmAudio) { loginBgmAudio = new Audio('assets/sounds/Villatic_Animation.mp3'); loginBgmAudio.loop = true; loginBgmAudio.volume = 0.4; } return loginBgmAudio; }
-        function getMainBgm() { if (!mainBgmAudio) { mainBgmAudio = new Audio('assets/sounds/The_Amazing_Digital_Circus.mp3'); mainBgmAudio.loop = true; mainBgmAudio.volume = 0.3; } return mainBgmAudio; }
+        function getLoginBgm() { if (!loginBgmAudio) { loginBgmAudio = new Audio('assets/sounds/Villatic_Animation.mp3'); loginBgmAudio.loop = true; loginBgmAudio.volume = 0.2; } return loginBgmAudio; }
+        function getMainBgm() { if (!mainBgmAudio) { mainBgmAudio = new Audio('assets/sounds/The_Amazing_Digital_Circus.mp3'); mainBgmAudio.loop = true; mainBgmAudio.volume = 0.2; } return mainBgmAudio; }
         function getEndingBgm() {
             if (!endingBgmAudio) {
                 endingBgmAudio = new Audio('assets/sounds/National_Anthem_Instrumental_One_Verse.mp3');
                 endingBgmAudio.loop = true;
-                endingBgmAudio.volume = 0.4;
+                endingBgmAudio.volume = 0.2;
             }
             return endingBgmAudio;
         }
@@ -2004,5 +2004,6 @@
         document.addEventListener('keydown', e => { if (e.key === 'Escape') { let gs = document.getElementById('gameScreen'); if (gs.classList.contains('active')) backToIntro() } });
     </script>
 </body>
+
 
 </html>
