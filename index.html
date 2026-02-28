@@ -1220,9 +1220,9 @@
             { ref: "시편 150:6", text: "호흡이 있는 자마다 여호와를 찬양할지어다 할렐루야", group: "공통" }
         ];
         const MAX_LEVELS_PER_RUN = 10;
-        const WOLF_LEVELS = [3, 5, 7, 10];
+        const WOLF_LEVELS = [3, 7, 8, 10];
         const WIZARD_LEVELS = [5, 8, 9, 10];
-        const WIZARD_CONFIG = { 5: { hp: 100, count: 1 }, 8: { hp: 200, count: 1 }, 9: { hp: 250, count: 1 }, 10: { hp: 100, count: 2 } };
+        const WIZARD_CONFIG = { 5: { hp: 100, count: 1 }, 8: { hp: 200, count: 1 }, 9: { hp: 250, count: 1 }, 10: { hp: 200, count: 2 } };
         let levelPool = [];
         let runLevels = [];
         let player = { name: '', grade: '', score: 0 };
@@ -1564,7 +1564,7 @@
             startTimer();
             let lvNum = curLevel + 1;
             if (WOLF_LEVELS.includes(lvNum)) {
-                villainState = { hp: 300, maxHp: 300, timer: null, active: true };
+                villainState = { hp: 350, maxHp: 350, timer: null, active: true };
                 villainState.timer = setTimeout(spawnVillain, 2000);
             }
             if (WIZARD_LEVELS.includes(lvNum)) {
@@ -2007,5 +2007,6 @@
 
 
 </html>
+
 
 
