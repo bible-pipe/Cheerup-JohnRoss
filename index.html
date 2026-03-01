@@ -1190,9 +1190,9 @@
     </div>
 
     <script>
-        /* Supabase 설정 - supabase.com에서 프로젝트 생성 후 본인 값으로 교체하세요 */
-        var SUPABASE_URL = '';  // 예: 'https://xxxxx.supabase.co'
-        var SUPABASE_ANON_KEY = '';  // Project Settings > API > anon public
+        /* Supabase 설정 */
+        var SUPABASE_URL = 'https://kdkcugqjytqsghvqdypj.supabase.co';
+        var SUPABASE_ANON_KEY = 'sb_publishable_0Wfx2MlTPVIxI0CsHm90qQ_VFEe3AfZ';
         var supabase = null;
         if (SUPABASE_URL && SUPABASE_ANON_KEY && typeof window.supabase !== 'undefined') {
             try { supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY); } catch (e) { }
@@ -1923,12 +1923,9 @@
 
         function resetAllRanks() {
             if (!confirm('랭킹 기록을 모두 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.')) return;
-            if (supabase) {
-                supabase.from('ranks').delete().neq('id', 0).then(function () { }).catch(function () { });
-            }
             try { localStorage.removeItem(STORAGE_KEYS.ranks); } catch (e) { }
             renderAdminRankSummary();
-            alert('랭킹이 초기화되었습니다.');
+            alert(supabase ? '로컬 캐시가 초기화되었습니다. Supabase 랭킹을 삭제하려면 Supabase 대시보드에서 ranks 테이블을 직접 초기화하세요.' : '랭킹이 초기화되었습니다.');
         }
 
         function showRanking() {
