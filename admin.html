@@ -165,6 +165,23 @@
         function getGlobalStatus() {
             try { var s = localStorage.getItem(STORAGE_KEYS.globalStatus) || 'null'; return JSON.parse(s); } catch (e) { return { active: true }; }
         }
+        function loadGameSettings(callback) {
+            initSupabase();
+            if (supabase) {
+                supabase.from('game_settings').select('is_active').eq('id', 1).maybeSingle()
+                    .then(function (res) {
+                        var active = res.data ? res.data.is_active !== false : true;
+                        if (callback) callback(active);
+                    })
+                    .catch(function () {
+                        var gs = getGlobalStatus();
+                        if (callback) callback(gs && gs.active !== false);
+                    });
+            } else {
+                var gs = getGlobalStatus();
+                if (callback) callback(gs && gs.active !== false);
+            }
+        }
         function loadLevelPool() {
             try {
                 var saved = JSON.parse(localStorage.getItem(STORAGE_KEYS.levels) || 'null');
@@ -186,8 +203,10 @@
         function renderGameStatus() {
             var el = document.getElementById('adminGameStatusText');
             if (!el) return;
-            var gs = getGlobalStatus();
-            el.textContent = gs && gs.active !== false ? '진행 중' : '멈춤 (접속 차단)';
+            el.textContent = '불러오는 중...';
+            loadGameSettings(function (active) {
+                if (el) el.textContent = active ? '진행 중' : '멈춤 (접속 차단)';
+            });
         }
         function renderRankTable() {
             var wrap = document.getElementById('adminRankTableWrap');
@@ -248,8 +267,15 @@
         function setGameActive(active) {
             try {
                 localStorage.setItem(STORAGE_KEYS.globalStatus, JSON.stringify({ active: !!active, updatedAt: new Date().toISOString() }));
-                renderGameStatus();
             } catch (e) { }
+            initSupabase();
+            if (supabase) {
+                supabase.from('game_settings').update({ is_active: !!active, updated_at: new Date().toISOString() }).eq('id', 1)
+                    .then(function () { renderGameStatus(); })
+                    .catch(function () { renderGameStatus(); });
+            } else {
+                renderGameStatus();
+            }
         }
 
         document.getElementById('adminLoginBtn').onclick = function () {

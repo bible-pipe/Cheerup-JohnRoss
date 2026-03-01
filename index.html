@@ -1143,8 +1143,8 @@
 
     <div class="screen" id="maintenanceScreen">
         <div class="maintenance-box">
-            <h2>⏸ 목사님이 게임을 멈췄어요</h2>
-            <p>다음 게임을 기다려 주세요♥사랑하고 축복합니다♥</p>
+            <h2>⏸ 게임이 잠시 멈췄어요</h2>
+            <p>다음 주일 게임을 기다려 주세요...</p>
             <div style="margin-top:18px">
                 <button class="btn btn-secondary" onclick="tryReloadGame()">다시 접속 시도</button>
             </div>
@@ -1251,6 +1251,7 @@
         let runLevels = [];
         let player = { name: '', grade: '', score: 0 };
         let curLevel = 0, timeLeft = 120, timer = null, placedWords = [], villainState = null, wizardStates = null, bgmPlaying = false, prevScreen = 'loginScreen', globalStatus = { active: true }, storyShown = false;
+        var cachedGameActive = true;
         let loginBgmAudio = null, mainBgmAudio = null, endingBgmAudio = null;
         function getLoginBgm() { if (!loginBgmAudio) { loginBgmAudio = new Audio('assets/sounds/Villatic_Animation.mp3'); loginBgmAudio.loop = true; loginBgmAudio.volume = 0.3; } return loginBgmAudio; }
         function getMainBgm() { if (!mainBgmAudio) { mainBgmAudio = new Audio('assets/sounds/The_Amazing_Digital_Circus.mp3'); mainBgmAudio.loop = true; mainBgmAudio.volume = 0.3; } return mainBgmAudio; }
@@ -1334,6 +1335,11 @@
         function showScreen(id) {
             document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
             document.getElementById(id).classList.add('active');
+            if (id === 'loginScreen') {
+                loadGameSettings(function (active) {
+                    if (!active) showScreen('maintenanceScreen');
+                });
+            }
             if (bgmPlaying) startBGMForCurrentScreen();
             if (id === 'loginScreen' && !bgmPlaying && document.getElementById('bgmUnlockOverlay')) {
                 document.getElementById('bgmUnlockOverlay').style.display = 'flex';
@@ -1436,13 +1442,33 @@
         }
 
         function loadGlobalStatus() {
-            let saved = JSON.parse(localStorage.getItem(STORAGE_KEYS.globalStatus) || 'null');
+            var saved = JSON.parse(localStorage.getItem(STORAGE_KEYS.globalStatus) || 'null');
             if (!saved) saved = { active: true };
             globalStatus = saved;
+            cachedGameActive = globalStatus.active !== false;
+        }
+
+        function loadGameSettings(callback) {
+            initSupabase();
+            if (supabase) {
+                supabase.from('game_settings').select('is_active').eq('id', 1).maybeSingle()
+                    .then(function (res) {
+                        var active = res.data ? res.data.is_active !== false : true;
+                        cachedGameActive = active;
+                        if (callback) callback(active);
+                    })
+                    .catch(function () {
+                        if (callback) callback(cachedGameActive);
+                    });
+            } else {
+                loadGlobalStatus();
+                cachedGameActive = globalStatus.active !== false;
+                if (callback) callback(cachedGameActive);
+            }
         }
 
         function isGameActive() {
-            return !globalStatus || globalStatus.active !== false;
+            return cachedGameActive;
         }
 
         function updateAdminStatusText() {
@@ -1472,21 +1498,23 @@
         }
 
         function startLogin() {
-            if (!isGameActive()) {
-                showScreen('maintenanceScreen');
-                return;
-            }
-            let n = document.getElementById('nameInput').value.trim();
-            let g = document.getElementById('gradeSelect').value;
-            if (!n) { alert('닉네임을 입력해주세요!'); return }
-            if (!g) { alert('학년을 선택해주세요!'); return }
-            player.name = n; player.grade = g; player.score = 0; curLevel = 0;
-            localStorage.setItem(STORAGE_KEYS.user, JSON.stringify({ name: n, grade: g }));
-            try { sessionStorage.setItem('pipeGameRunStartTime', String(Date.now())); } catch (e) { }
-            prepareRunLevels();
-            storyShown = false;
-            showStoryIntro();
-            if (!bgmPlaying) startBGM();
+            loadGameSettings(function (active) {
+                if (!active) {
+                    showScreen('maintenanceScreen');
+                    return;
+                }
+                var n = document.getElementById('nameInput').value.trim();
+                var g = document.getElementById('gradeSelect').value;
+                if (!n) { alert('닉네임을 입력해주세요!'); return; }
+                if (!g) { alert('학년을 선택해주세요!'); return; }
+                player.name = n; player.grade = g; player.score = 0; curLevel = 0;
+                localStorage.setItem(STORAGE_KEYS.user, JSON.stringify({ name: n, grade: g }));
+                try { sessionStorage.setItem('pipeGameRunStartTime', String(Date.now())); } catch (e) { }
+                prepareRunLevels();
+                storyShown = false;
+                showStoryIntro();
+                if (!bgmPlaying) startBGM();
+            });
         }
 
         function showStoryIntro() {
@@ -1502,6 +1530,9 @@
         loadGlobalStatus();
         loadSavedLogin();
         updateAdminStatusText();
+        loadGameSettings(function (active) {
+            if (!active) showScreen('maintenanceScreen');
+        });
 
         const bgmUnlockEl = document.getElementById('bgmUnlockOverlay');
         function showBgmUnlockOverlay() {
@@ -1984,8 +2015,15 @@
 
         function setGlobalGameActive(active) {
             globalStatus = { active: !!active, updatedAt: new Date().toISOString() };
-            localStorage.setItem(STORAGE_KEYS.globalStatus, JSON.stringify(globalStatus));
-            updateAdminStatusText();
+            try { localStorage.setItem(STORAGE_KEYS.globalStatus, JSON.stringify(globalStatus)); } catch (e) { }
+            if (supabase) {
+                supabase.from('game_settings').update({ is_active: !!active, updated_at: new Date().toISOString() }).eq('id', 1)
+                    .then(function () { cachedGameActive = !!active; updateAdminStatusText(); })
+                    .catch(function () { updateAdminStatusText(); });
+            } else {
+                cachedGameActive = !!active;
+                updateAdminStatusText();
+            }
         }
 
         function addNewLevel() {
@@ -2039,12 +2077,13 @@
         }
 
         function tryReloadGame() {
-            loadGlobalStatus();
-            if (!isGameActive()) {
-                alert('아직 게임이 열리지 않았어요. 조금 후에 다시 시도해주세요.');
-                return;
-            }
-            showScreen('loginScreen');
+            loadGameSettings(function (active) {
+                if (!active) {
+                    alert('아직 게임이 열리지 않았어요. 조금 후에 다시 시도해주세요.');
+                    return;
+                }
+                showScreen('loginScreen');
+            });
         }
 
         document.getElementById('adminLevelList').addEventListener('click', function (e) {
@@ -2079,6 +2118,5 @@
         document.addEventListener('keydown', e => { if (e.key === 'Escape') { let gs = document.getElementById('gameScreen'); if (gs.classList.contains('active')) backToIntro() } });
     </script>
 </body>
-
 
 </html>
