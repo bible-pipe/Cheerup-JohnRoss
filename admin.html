@@ -81,14 +81,16 @@
         </div>
     </div>
     <script>
+        /* Supabase: 라이브러리 참조를 먼저 저장 (아래 var supabase = null 이 전역을 덮어쓰므로) */
+        var _supabaseLib = (typeof window !== 'undefined' && window.supabase) ? window.supabase : null;
         /* Supabase 설정 - index.html과 동일한 값. 작동 안 하면 Project Settings > API > anon public (eyJ...로 시작) 사용 */
         var SUPABASE_URL = 'https://kdkcugqjytqsghvqdypj.supabase.co';
-        var SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imtka2N1Z3FqeXRxc2dodnFkeXBqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzIzMTEwOTEsImV4cCI6MjA4Nzg4NzA5MX0.zeNLenWFZLGnfE1Yhb9f22g1uaHsPGZud2Ou--mXbrE';
+        var SUPABASE_ANON_KEY = 'sb_publishable_0Wfx2MlTPVIxI0CsHm90qQ_VFEe3AfZ';
         var supabase = null;
         function initSupabase() {
             if (supabase) return;
             if (!SUPABASE_URL || !SUPABASE_ANON_KEY) return;
-            var sb = (typeof window !== 'undefined' && window.supabase) ? window.supabase : (typeof globalThis !== 'undefined' && globalThis.supabase) ? globalThis.supabase : null;
+            var sb = _supabaseLib;
             if (!sb || typeof sb.createClient !== 'function') return;
             try {
                 supabase = sb.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
@@ -328,4 +330,3 @@
     </script>
 </body>
 </html>
-
