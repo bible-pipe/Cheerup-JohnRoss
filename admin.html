@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>관리자 페이지 - 말씀 찾기</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         * { box-sizing: border-box; }
         body { font-family: 'Malgun Gothic', sans-serif; margin: 0; padding: 20px; background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%); min-height: 100vh; color: #fff; }
@@ -80,6 +81,14 @@
         </div>
     </div>
     <script>
+        /* Supabase 설정 - index.html과 동일한 값으로 설정하세요 */
+        var SUPABASE_URL = '';
+        var SUPABASE_ANON_KEY = '';
+        var supabase = null;
+        if (SUPABASE_URL && SUPABASE_ANON_KEY && typeof window.supabase !== 'undefined') {
+            try { supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY); } catch (e) { }
+        }
+
         var STORAGE_KEYS = {
             ranks: 'pipeGameRanks',
             levels: 'pipeGameLevels',
@@ -111,11 +120,30 @@
         ];
         var levelPool = [];
 
-        function getRanks() {
-            try { return JSON.parse(localStorage.getItem(STORAGE_KEYS.ranks) || '[]'); } catch (e) { return []; }
+        function loadRanks(callback) {
+            if (supabase) {
+                supabase.from('ranks').select('name, grade, score, level, date').order('score', { ascending: false }).limit(100)
+                    .then(function (res) { if (callback) callback(res.data || []); })
+                    .catch(function (e) {
+                        try { var local = JSON.parse(localStorage.getItem(STORAGE_KEYS.ranks) || '[]'); if (callback) callback(local); } catch (x) { if (callback) callback([]); }
+                    });
+            } else {
+                try { var local = JSON.parse(localStorage.getItem(STORAGE_KEYS.ranks) || '[]'); if (callback) callback(local); } catch (e) { if (callback) callback([]); }
+            }
         }
-        function getGiftCodeLog() {
-            try { var s = localStorage.getItem(STORAGE_KEYS.giftCodeLog) || '[]'; return JSON.parse(s); } catch (e) { return []; }
+        function loadGiftCodeLog(callback) {
+            if (supabase) {
+                supabase.from('gift_codes').select('name, grade, code, date, duration_seconds').order('date', { ascending: false }).limit(500)
+                    .then(function (res) {
+                        var list = (res.data || []).map(function (r) { return { name: r.name, grade: r.grade, code: r.code, date: r.date, durationSeconds: r.duration_seconds }; });
+                        if (callback) callback(list);
+                    })
+                    .catch(function (e) {
+                        try { var local = JSON.parse(localStorage.getItem(STORAGE_KEYS.giftCodeLog) || '[]'); if (callback) callback(local); } catch (x) { if (callback) callback([]); }
+                    });
+            } else {
+                try { var local = JSON.parse(localStorage.getItem(STORAGE_KEYS.giftCodeLog) || '[]'); if (callback) callback(local); } catch (e) { if (callback) callback([]); }
+            }
         }
         function getGlobalStatus() {
             try { var s = localStorage.getItem(STORAGE_KEYS.globalStatus) || 'null'; return JSON.parse(s); } catch (e) { return { active: true }; }
@@ -147,34 +175,40 @@
         function renderRankTable() {
             var wrap = document.getElementById('adminRankTableWrap');
             if (!wrap) return;
-            var ranks = getRanks();
-            if (!ranks.length) {
-                wrap.innerHTML = '<p style="color:rgba(255,255,255,.6)">등록된 랭킹이 없습니다.</p>';
-                return;
-            }
-            var html = '<table><thead><tr><th>순위</th><th>이름</th><th>반</th><th>점수</th><th>레벨</th><th>날짜</th></tr></thead><tbody>';
-            ranks.forEach(function (r, i) {
-                var medal = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : (i + 1);
-                html += '<tr><td>' + medal + '</td><td>' + (r.name || '-') + '</td><td>' + (r.grade || '-') + '</td><td>' + (r.score || 0) + '점</td><td>Lv.' + (r.level || 1) + '</td><td>' + (r.date || '') + '</td></tr>';
+            wrap.innerHTML = '<p style="color:rgba(255,255,255,.6)">불러오는 중...</p>';
+            loadRanks(function (ranks) {
+                if (!wrap) return;
+                if (!ranks || !ranks.length) {
+                    wrap.innerHTML = '<p style="color:rgba(255,255,255,.6)">등록된 랭킹이 없습니다.</p>';
+                    return;
+                }
+                var html = '<table><thead><tr><th>순위</th><th>이름</th><th>반</th><th>점수</th><th>레벨</th><th>날짜</th></tr></thead><tbody>';
+                ranks.forEach(function (r, i) {
+                    var medal = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : (i + 1);
+                    html += '<tr><td>' + medal + '</td><td>' + (r.name || '-') + '</td><td>' + (r.grade || '-') + '</td><td>' + (r.score || 0) + '점</td><td>Lv.' + (r.level || 1) + '</td><td>' + (r.date || '') + '</td></tr>';
+                });
+                html += '</tbody></table>';
+                wrap.innerHTML = html;
             });
-            html += '</tbody></table>';
-            wrap.innerHTML = html;
         }
         function renderGiftCodeTable() {
             var wrap = document.getElementById('adminGiftCodeTableWrap');
             if (!wrap) return;
-            var log = getGiftCodeLog();
-            if (!log || !log.length) {
-                wrap.innerHTML = '<p style="color:rgba(255,255,255,.6)">아직 수령 기록이 없습니다.</p>';
-                return;
-            }
-            var html = '<table><thead><tr><th>이름</th><th>반</th><th>코드</th><th>수령 일시</th><th>소요 시간</th></tr></thead><tbody>';
-            log.forEach(function (entry) {
-                var dur = entry.durationSeconds != null ? entry.durationSeconds + '초' : '-';
-                html += '<tr><td>' + (entry.name || '-') + '</td><td>' + (entry.grade || '-') + '</td><td><code>' + (entry.code || '') + '</code></td><td>' + (entry.date || '') + '</td><td>' + dur + '</td></tr>';
+            wrap.innerHTML = '<p style="color:rgba(255,255,255,.6)">불러오는 중...</p>';
+            loadGiftCodeLog(function (log) {
+                if (!wrap) return;
+                if (!log || !log.length) {
+                    wrap.innerHTML = '<p style="color:rgba(255,255,255,.6)">아직 수령 기록이 없습니다.</p>';
+                    return;
+                }
+                var html = '<table><thead><tr><th>이름</th><th>반</th><th>코드</th><th>수령 일시</th><th>소요 시간</th></tr></thead><tbody>';
+                log.forEach(function (entry) {
+                    var dur = entry.durationSeconds != null ? entry.durationSeconds + '초' : '-';
+                    html += '<tr><td>' + (entry.name || '-') + '</td><td>' + (entry.grade || '-') + '</td><td><code>' + (entry.code || '') + '</code></td><td>' + (entry.date || '') + '</td><td>' + dur + '</td></tr>';
+                });
+                html += '</tbody></table>';
+                wrap.innerHTML = html;
             });
-            html += '</tbody></table>';
-            wrap.innerHTML = html;
         }
         function renderLevelList() {
             var listEl = document.getElementById('adminLevelList');
@@ -231,7 +265,10 @@
         document.getElementById('btnGameOff').onclick = function () { setGameActive(false); };
         document.getElementById('btnResetRanks').onclick = function () {
             if (!confirm('랭킹 기록을 모두 삭제하시겠습니까?')) return;
-            localStorage.removeItem(STORAGE_KEYS.ranks);
+            if (supabase) {
+                supabase.from('ranks').delete().neq('id', 0).then(function () { }).catch(function () { });
+            }
+            try { localStorage.removeItem(STORAGE_KEYS.ranks); } catch (e) { }
             renderRankTable();
             alert('랭킹이 초기화되었습니다.');
         };

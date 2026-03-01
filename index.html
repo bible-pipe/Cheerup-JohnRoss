@@ -9,7 +9,7 @@
         (function () {
             var base = document.createElement('base');
             if (window.location.hostname.indexOf('github.io') !== -1)
-                base.href = 'https://bible-pipe.github.io/Cheerup-JohnRoss/';
+                base.href = 'https://bible-pipe.github.io/find-the-words/';
             else {
                 var p = window.location.pathname;
                 base.href = (p.replace(/\/[^/]*$/, '/') || '/');
@@ -17,6 +17,7 @@
             if (document.head) document.head.insertBefore(base, document.head.firstChild);
         })();
     </script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Jua&family=Black+Han+Sans&display=swap');
 
@@ -1125,13 +1126,9 @@
         <div class="ending-box">
             <img src="assets/images/ending.jpg" class="ending-image" alt="ending">
             <div class="ending-text">
-                동해물과 백두산이 마르고 닳도록~
-                하나님이 보우하사 우리나라 만세!
-                축하합니다! 당신은 임무를 완수했습니다.
-                ...옛날, 일본은 우리 민족의 정신을 없애려고 한글을 뺏었습니다.
-                악한 영도 우리에게서 하나님 말씀을 뺏으려고 합니다.
-                그러나 당신은 이겼습니다! 이제 더욱 하나님 말씀을 사랑하여
-                하나님의 사랑을 뺏기지 맙시다! 아멘!
+                축복합니다! 당신은 임무를 완수했습니다.
+                성경 말씀은 우리에게 자유를 주는 하나님의 약속입니다.
+                이제 죄로부터 독립하여 하나님의 자녀가 됩시다! 아멘!
             </div>
             <div id="endingGiftCodeBox" class="ending-gift-code-box" style="display:none;">
                 <div id="endingGiftCode" class="ending-gift-code"></div>
@@ -1146,8 +1143,8 @@
 
     <div class="screen" id="maintenanceScreen">
         <div class="maintenance-box">
-            <h2>⏸ 관리자가 게임을 잠시 멈췄어요</h2>
-            <p>오후 1시까지 점검중... 기다려 주세요...</p>
+            <h2>⏸ 게임이 잠시 멈췄어요</h2>
+            <p>다음 주일 게임을 기다려 주세요...</p>
             <div style="margin-top:18px">
                 <button class="btn btn-secondary" onclick="tryReloadGame()">다시 접속 시도</button>
             </div>
@@ -1193,6 +1190,14 @@
     </div>
 
     <script>
+        /* Supabase 설정 - supabase.com에서 프로젝트 생성 후 본인 값으로 교체하세요 */
+        var SUPABASE_URL = '';  // 예: 'https://xxxxx.supabase.co'
+        var SUPABASE_ANON_KEY = '';  // Project Settings > API > anon public
+        var supabase = null;
+        if (SUPABASE_URL && SUPABASE_ANON_KEY && typeof window.supabase !== 'undefined') {
+            try { supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY); } catch (e) { }
+        }
+
         const STORAGE_KEYS = {
             user: 'pipeGameUser',
             ranks: 'pipeGameRanks',
@@ -1224,16 +1229,16 @@
             { ref: "시편 150:6", text: "호흡이 있는 자마다 여호와를 찬양할지어다 할렐루야", group: "공통" }
         ];
         const MAX_LEVELS_PER_RUN = 10;
-        const WOLF_LEVELS = [3, 7, 8, 10];
+        const WOLF_LEVELS = [3, 5, 7, 10];
         const WIZARD_LEVELS = [5, 8, 9, 10];
-        const WIZARD_CONFIG = { 5: { hp: 100, count: 1 }, 8: { hp: 200, count: 1 }, 9: { hp: 250, count: 1 }, 10: { hp: 200, count: 2 } };
+        const WIZARD_CONFIG = { 5: { hp: 100, count: 1 }, 8: { hp: 200, count: 1 }, 9: { hp: 250, count: 1 }, 10: { hp: 100, count: 2 } };
         let levelPool = [];
         let runLevels = [];
         let player = { name: '', grade: '', score: 0 };
         let curLevel = 0, timeLeft = 120, timer = null, placedWords = [], villainState = null, wizardStates = null, bgmPlaying = false, prevScreen = 'loginScreen', globalStatus = { active: true }, storyShown = false;
         let loginBgmAudio = null, mainBgmAudio = null, endingBgmAudio = null;
         function getLoginBgm() { if (!loginBgmAudio) { loginBgmAudio = new Audio('assets/sounds/Villatic_Animation.mp3'); loginBgmAudio.loop = true; loginBgmAudio.volume = 0.3; } return loginBgmAudio; }
-        function getMainBgm() { if (!mainBgmAudio) { mainBgmAudio = new Audio('assets/sounds/The_Amazing_Digital_Circus.mp3'); mainBgmAudio.loop = true; mainBgmAudio.volume = 0.25; } return mainBgmAudio; }
+        function getMainBgm() { if (!mainBgmAudio) { mainBgmAudio = new Audio('assets/sounds/The_Amazing_Digital_Circus.mp3'); mainBgmAudio.loop = true; mainBgmAudio.volume = 0.3; } return mainBgmAudio; }
         function getEndingBgm() {
             if (!endingBgmAudio) {
                 endingBgmAudio = new Audio('assets/sounds/National_Anthem_Instrumental_One_Verse.mp3');
@@ -1568,11 +1573,11 @@
             startTimer();
             let lvNum = curLevel + 1;
             if (WOLF_LEVELS.includes(lvNum)) {
-                villainState = { hp: 350, maxHp: 350, timer: null, active: true };
+                villainState = { hp: 300, maxHp: 300, timer: null, active: true };
                 villainState.timer = setTimeout(spawnVillain, 2000);
             }
             if (WIZARD_LEVELS.includes(lvNum)) {
-                var wizCfg = WIZARD_CONFIG[lvNum] || { hp: 200, count: 1 };
+                var wizCfg = WIZARD_CONFIG[lvNum] || { hp: 100, count: 1 };
                 var count = wizCfg.count || 1;
                 wizardStates = [];
                 for (var w = 0; w < count; w++) {
@@ -1705,16 +1710,24 @@
             var runStart = 0;
             try { runStart = parseInt(sessionStorage.getItem('pipeGameRunStartTime') || '0', 10); } catch (e) { }
             var durationSeconds = runStart > 0 ? Math.round((Date.now() - runStart) / 1000) : null;
-            var log = getGiftCodeLog();
-            log = Array.isArray(log) ? log.slice() : [];
-            log.push({
+            var record = {
                 name: player.name,
                 grade: player.grade,
                 code: code,
                 date: new Date().toLocaleString('ko-KR'),
-                durationSeconds: durationSeconds
-            });
-            try { localStorage.setItem(STORAGE_KEYS.giftCodeLog, JSON.stringify(log)); } catch (e) { }
+                duration_seconds: durationSeconds
+            };
+            if (supabase) {
+                supabase.from('gift_codes').insert(record).then(function () { }).catch(function (e) {
+                    var log = JSON.parse(localStorage.getItem(STORAGE_KEYS.giftCodeLog) || '[]');
+                    log.push({ name: record.name, grade: record.grade, code: record.code, date: record.date, durationSeconds: record.duration_seconds });
+                    try { localStorage.setItem(STORAGE_KEYS.giftCodeLog, JSON.stringify(log)); } catch (x) { }
+                });
+            } else {
+                var log = JSON.parse(localStorage.getItem(STORAGE_KEYS.giftCodeLog) || '[]');
+                log.push({ name: record.name, grade: record.grade, code: record.code, date: record.date, durationSeconds: durationSeconds });
+                try { localStorage.setItem(STORAGE_KEYS.giftCodeLog, JSON.stringify(log)); } catch (e) { }
+            }
             var box = document.getElementById('endingGiftCodeBox');
             var codeEl = document.getElementById('endingGiftCode');
             if (box && codeEl) {
@@ -1825,41 +1838,69 @@
             state.attackTimer = setInterval(function () { wizardAttack(idx); }, 3000);
         }
         function saveScore() {
-            let ranks = JSON.parse(localStorage.getItem(STORAGE_KEYS.ranks) || '[]');
-            ranks.push({ name: player.name, grade: player.grade, score: player.score, level: curLevel + 1, date: new Date().toLocaleDateString('ko-KR') });
-            ranks.sort((a, b) => b.score - a.score); if (ranks.length > 20) ranks = ranks.slice(0, 20);
-            localStorage.setItem(STORAGE_KEYS.ranks, JSON.stringify(ranks));
+            var record = { name: player.name, grade: player.grade, score: player.score, level: curLevel + 1, date: new Date().toLocaleDateString('ko-KR') };
+            if (supabase) {
+                supabase.from('ranks').insert(record).then(function () { }).catch(function (e) {
+                    var ranks = JSON.parse(localStorage.getItem(STORAGE_KEYS.ranks) || '[]');
+                    ranks.push(record); ranks.sort(function (a, b) { return b.score - a.score; });
+                    if (ranks.length > 100) ranks = ranks.slice(0, 100);
+                    try { localStorage.setItem(STORAGE_KEYS.ranks, JSON.stringify(ranks)); } catch (x) { }
+                });
+            } else {
+                var ranks = JSON.parse(localStorage.getItem(STORAGE_KEYS.ranks) || '[]');
+                ranks.push(record); ranks.sort(function (a, b) { return b.score - a.score; });
+                if (ranks.length > 20) ranks = ranks.slice(0, 20);
+                try { localStorage.setItem(STORAGE_KEYS.ranks, JSON.stringify(ranks)); } catch (e) { }
+            }
         }
 
-        function getRanks() {
-            return JSON.parse(localStorage.getItem(STORAGE_KEYS.ranks) || '[]');
+        function loadRanks(callback) {
+            if (supabase) {
+                supabase.from('ranks').select('name, grade, score, level, date').order('score', { ascending: false }).limit(50)
+                    .then(function (res) { if (callback) callback(res.data || []); })
+                    .catch(function (e) {
+                        var local = JSON.parse(localStorage.getItem(STORAGE_KEYS.ranks) || '[]');
+                        if (callback) callback(local);
+                    });
+            } else {
+                var local = JSON.parse(localStorage.getItem(STORAGE_KEYS.ranks) || '[]');
+                if (callback) callback(local);
+            }
         }
+
+        function getRanks() { return []; }
 
         function renderRankList() {
-            let ranks = getRanks();
-            let list = document.getElementById('rankList'); list.innerHTML = '';
-            if (ranks.length === 0) {
-                list.innerHTML = '<p style="text-align:center;color:rgba(255,255,255,.5)">아직 기록이 없습니다</p>';
-                return;
-            }
-            ranks.forEach((r, i) => {
-                let medal = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : (i + 1);
-                let d = document.createElement('div'); d.className = 'rank-item';
-                d.innerHTML = '<div class="rank-num">' + medal + '</div><div class="rank-info"><div class="rank-name">' + r.name + '</div><div class="rank-grade">' + r.grade + ' | ' + r.date + '</div></div><div class="rank-score">' + r.score + '점</div>';
-                list.appendChild(d)
+            var list = document.getElementById('rankList'); if (!list) return;
+            list.innerHTML = '<p style="text-align:center;color:rgba(255,255,255,.5)">랭킹 불러오는 중...</p>';
+            loadRanks(function (ranks) {
+                list.innerHTML = '';
+                if (!ranks || ranks.length === 0) {
+                    list.innerHTML = '<p style="text-align:center;color:rgba(255,255,255,.5)">아직 기록이 없습니다</p>';
+                    return;
+                }
+                ranks.forEach(function (r, i) {
+                    var medal = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : (i + 1);
+                    var d = document.createElement('div'); d.className = 'rank-item';
+                    d.innerHTML = '<div class="rank-num">' + medal + '</div><div class="rank-info"><div class="rank-name">' + (r.name || '-') + '</div><div class="rank-grade">' + (r.grade || '-') + ' | ' + (r.date || '') + '</div></div><div class="rank-score">' + (r.score || 0) + '점</div>';
+                    list.appendChild(d);
+                });
             });
         }
 
         function renderAdminRankSummary() {
-            const el = document.getElementById('adminRankSummary');
+            var el = document.getElementById('adminRankSummary');
             if (!el) return;
-            const ranks = getRanks();
-            if (!ranks || ranks.length === 0) {
-                el.textContent = '등록된 랭킹이 아직 없습니다.';
-                return;
-            }
-            const top = ranks[0];
-            el.textContent = '총 ' + ranks.length + '개 기록, 최고 점수 ' + top.score + '점 (' + top.name + ', Lv.' + top.level + ')';
+            el.textContent = '불러오는 중...';
+            loadRanks(function (ranks) {
+                if (!el) return;
+                if (!ranks || ranks.length === 0) {
+                    el.textContent = '등록된 랭킹이 아직 없습니다.';
+                    return;
+                }
+                var top = ranks[0];
+                el.textContent = '총 ' + ranks.length + '개 기록, 최고 점수 ' + (top.score || 0) + '점 (' + (top.name || '-') + ', Lv.' + (top.level || 1) + ')';
+            });
         }
 
         function renderAdminGiftCodeList() {
@@ -1882,7 +1923,10 @@
 
         function resetAllRanks() {
             if (!confirm('랭킹 기록을 모두 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.')) return;
-            localStorage.removeItem(STORAGE_KEYS.ranks);
+            if (supabase) {
+                supabase.from('ranks').delete().neq('id', 0).then(function () { }).catch(function () { });
+            }
+            try { localStorage.removeItem(STORAGE_KEYS.ranks); } catch (e) { }
             renderAdminRankSummary();
             alert('랭킹이 초기화되었습니다.');
         }
@@ -2010,10 +2054,4 @@
     </script>
 </body>
 
-
 </html>
-
-
-
-
-
