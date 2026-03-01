@@ -81,13 +81,23 @@
         </div>
     </div>
     <script>
-        /* Supabase 설정 */
+        /* Supabase 설정 - index.html과 동일한 값. 작동 안 하면 Project Settings > API > anon public (eyJ...로 시작) 사용 */
         var SUPABASE_URL = 'https://kdkcugqjytqsghvqdypj.supabase.co';
-        var SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imtka2N1Z3FqeXRxc2dodnFkeXBqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzIzMTEwOTEsImV4cCI6MjA4Nzg4NzA5MX0.zeNLenWFZLGnfE1Yhb9f22g1uaHsPGZud2Ou--mXbrE';
+        var SUPABASE_ANON_KEY = 'sb_publishable_0Wfx2MlTPVIxI0CsHm90qQ_VFEe3AfZ';
         var supabase = null;
-        if (SUPABASE_URL && SUPABASE_ANON_KEY && typeof window.supabase !== 'undefined') {
-            try { supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY); } catch (e) { }
+        function initSupabase() {
+            if (supabase) return;
+            if (!SUPABASE_URL || !SUPABASE_ANON_KEY) return;
+            if (typeof window.supabase !== 'undefined') {
+                try { supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY); } catch (e) { console.warn('Supabase createClient error:', e); }
+            }
         }
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', function () { initSupabase(); });
+        } else {
+            initSupabase();
+        }
+        setTimeout(initSupabase, 500);
 
         var STORAGE_KEYS = {
             ranks: 'pipeGameRanks',
@@ -99,22 +109,22 @@
         var DEFAULT_LEVELS = [
             { ref: "창세기 1:1", text: "태초에 하나님이 천지를 창조하시니라", group: "공통" },
             { ref: "시편 23:1", text: "여호와는 나의 목자시니 내게 부족함이 없으리로다", group: "공통" },
-            { ref: "이사야 59:2", text: "오직 너희 죄악이 너희와 너희 하나님 사이를 갈라 놓았고 너희 죄가 그의 얼굴을 가리어서 너희에게서 듣지 않으시게 함이니라", group: "공통" },
+            { ref: "잠언 3:5", text: "너는 마음을 다하여 여호와를 신뢰하고 네 명철을 의지하지 말라", group: "공통" },
             { ref: "요한복음 3:16", text: "하나님이 세상을 이처럼 사랑하사 독생자를 주셨으니 이는 그를 믿는 자마다 멸망하지 않고 영생을 얻게 하려 하심이라", group: "공통" },
-            { ref: "창세기 1:27", text: "하나님이 자기 형상 곧 하나님의 형상대로 사람을 창조하시되 남자와 여자를 창조하시고", group: "공통" },
-            { ref: "시편 53:1", text: "어리석은 자는 그의 마음에 이르기를 하나님이 없다 하도다 그들은 부패하며 가증한 악을 행함이여 선을 행하는 자가 없도다", group: "공통" },
-            { ref: "고린도후서 5:17", text: "그런즉 누구든지 그리스도 안에 있으면 새로운 피조물이라 이전 것은 지나갔으니 보라 새 것이 되었도다", group: "공통" },
-            { ref: "고린도전서 1:25", text: "하나님의 어리석음이 사람보다 지혜롭고 하나님의 약하심이 사람보다 강하니라", group: "공통" },
+            { ref: "빌립보서 4:13", text: "내게 능력 주시는 자 안에서 내가 모든 것을 할 수 있느니라", group: "공통" },
+            { ref: "여호수아 1:9", text: "내가 네게 명한 것이 아니냐 강하고 담대하라 두려워하지 말며 놀라지 말라", group: "공통" },
+            { ref: "로마서 8:28", text: "우리가 알거니와 하나님을 사랑하는 자 곧 그의 뜻대로 부르심을 입은 자들에게는 모든 것이 합력하여 선을 이루느니라", group: "공통" },
+            { ref: "이사야 41:10", text: "두려워하지 말라 내가 너와 함께 함이라 놀라지 말라 나는 네 하나님이 됨이라", group: "공통" },
             { ref: "마태복음 28:20", text: "내가 세상 끝날까지 너희와 항상 함께 있으리라", group: "공통" },
             { ref: "시편 119:105", text: "주의 말씀은 내 발에 등이요 내 길에 빛이니이다", group: "공통" },
             { ref: "잠언 22:6", text: "마땅히 행할 길을 아이에게 가르치라 그리하면 늙어도 그것을 떠나지 아니하리라", group: "공통" },
             { ref: "히브리서 11:1", text: "믿음은 바라는 것들의 실상이요 보이지 않는 것들의 증거니", group: "공통" },
             { ref: "예레미야 29:11", text: "너희를 향한 나의 생각을 내가 아노라 평안이요 재앙이 아니니라", group: "공통" },
-            { ref: "마가복음 16:15", text: "또 이르시되 너희는 온 천하에 다니며 만민에게 복음을 전파하라", group: "공통" },
+            { ref: "시편 46:1", text: "하나님은 우리의 피난처시요 힘이시니 환난 중에 만날 큰 도움이시라", group: "공통" },
             { ref: "갈라디아서 5:22", text: "오직 성령의 열매는 사랑과 희락과 화평과 오래 참음과 자비와 양선과 충성과 온유와 절제니", group: "공통" },
             { ref: "고린도전서 13:4", text: "사랑은 오래 참고 사랑은 온유하며 시기하지 아니하며 자랑하지 아니하며 교만하지 아니하며", group: "공통" },
             { ref: "에베소서 2:8", text: "너희는 그 은혜에 의하여 믿음으로 말미암아 구원을 받았으니 이것은 너희에게서 난 것이 아니요 하나님의 선물이라", group: "공통" },
-            { ref: "시편 24:1", text: "땅과 거기에 충만한 것과 세계와 그 가운데에 사는 자들은 다 여호와의 것이로다", group: "공통" },
+            { ref: "시편 37:4", text: "또한 여호와를 기뻐하라 그가 네 마음의 소원을 네게 이루어 주시리로다", group: "공통" },
             { ref: "디모데후서 1:7", text: "하나님이 우리에게 주신 것은 두려워하는 마음이 아니요 능력과 사랑과 절제하는 마음이니", group: "공통" },
             { ref: "시편 150:6", text: "호흡이 있는 자마다 여호와를 찬양할지어다 할렐루야", group: "공통" }
         ];
@@ -313,5 +323,3 @@
     </script>
 </body>
 </html>
-
-

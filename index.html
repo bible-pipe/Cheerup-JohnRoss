@@ -1190,13 +1190,25 @@
     </div>
 
     <script>
-        /* Supabase 설정 */
+        /* Supabase 설정 - Project Settings > API 에서 anon public 키(JWT, eyJ...로 시작) 사용 */
         var SUPABASE_URL = 'https://kdkcugqjytqsghvqdypj.supabase.co';
-        var SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imtka2N1Z3FqeXRxc2dodnFkeXBqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzIzMTEwOTEsImV4cCI6MjA4Nzg4NzA5MX0.zeNLenWFZLGnfE1Yhb9f22g1uaHsPGZud2Ou--mXbrE';
+        var SUPABASE_ANON_KEY = 'sb_publishable_0Wfx2MlTPVIxI0CsHm90qQ_VFEe3AfZ';
         var supabase = null;
-        if (SUPABASE_URL && SUPABASE_ANON_KEY && typeof window.supabase !== 'undefined') {
-            try { supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY); } catch (e) { }
+        function initSupabase() {
+            if (supabase) return;
+            if (!SUPABASE_URL || !SUPABASE_ANON_KEY) return;
+            if (typeof window.supabase !== 'undefined') {
+                try {
+                    supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+                } catch (e) { console.warn('Supabase createClient error:', e); }
+            }
         }
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', function () { initSupabase(); });
+        } else {
+            initSupabase();
+        }
+        setTimeout(initSupabase, 500);
 
         const STORAGE_KEYS = {
             user: 'pipeGameUser',
@@ -1743,11 +1755,22 @@
             for (var j = 0; j < 3; j++) code += Math.floor(Math.random() * 10);
             return code;
         }
-        function getGiftCodeLog() {
-            try {
-                var saved = JSON.parse(localStorage.getItem(STORAGE_KEYS.giftCodeLog) || '[]');
-                return Array.isArray(saved) ? saved : [];
-            } catch (e) { return []; }
+        function getGiftCodeLog() { return []; }
+        function loadGiftCodeLog(callback) {
+            if (supabase) {
+                supabase.from('gift_codes').select('name, grade, code, date, duration_seconds').order('date', { ascending: false }).limit(500)
+                    .then(function (res) {
+                        var list = (res.data || []).map(function (r) { return { name: r.name, grade: r.grade, code: r.code, date: r.date, durationSeconds: r.duration_seconds }; });
+                        if (callback) callback(list);
+                    })
+                    .catch(function (e) {
+                        var local = JSON.parse(localStorage.getItem(STORAGE_KEYS.giftCodeLog) || '[]');
+                        if (callback) callback(local);
+                    });
+            } else {
+                var local = JSON.parse(localStorage.getItem(STORAGE_KEYS.giftCodeLog) || '[]');
+                if (callback) callback(local);
+            }
         }
         function spawnVillain() {
             if (!villainState || !villainState.active || villainState.hp <= 0 || !document.getElementById('gameScreen').classList.contains('active')) return;
@@ -1904,20 +1927,23 @@
         }
 
         function renderAdminGiftCodeList() {
-            const el = document.getElementById('adminGiftCodeList');
+            var el = document.getElementById('adminGiftCodeList');
             if (!el) return;
-            const log = getGiftCodeLog();
-            if (!log || log.length === 0) {
-                el.innerHTML = '<p style="font-size:.85rem;color:rgba(255,255,255,.7)">아직 수령 기록이 없습니다.</p>';
-                return;
-            }
-            el.innerHTML = '<table class="gift-code-table"><thead><tr><th>이름</th><th>반</th><th>코드</th><th>수령 일시</th><th>소요 시간</th></tr></thead><tbody></tbody></table>';
-            const tbody = el.querySelector('tbody');
-            log.forEach(function (entry) {
-                const tr = document.createElement('tr');
-                var dur = entry.durationSeconds != null ? entry.durationSeconds + '초' : '-';
-                tr.innerHTML = '<td>' + (entry.name || '-') + '</td><td>' + (entry.grade || '-') + '</td><td><code>' + (entry.code || '') + '</code></td><td>' + (entry.date || '') + '</td><td>' + dur + '</td>';
-                tbody.appendChild(tr);
+            el.innerHTML = '<p style="font-size:.85rem;color:rgba(255,255,255,.7)">불러오는 중...</p>';
+            loadGiftCodeLog(function (log) {
+                if (!el) return;
+                if (!log || log.length === 0) {
+                    el.innerHTML = '<p style="font-size:.85rem;color:rgba(255,255,255,.7)">아직 수령 기록이 없습니다.</p>';
+                    return;
+                }
+                el.innerHTML = '<table class="gift-code-table"><thead><tr><th>이름</th><th>반</th><th>코드</th><th>수령 일시</th><th>소요 시간</th></tr></thead><tbody></tbody></table>';
+                var tbody = el.querySelector('tbody');
+                log.forEach(function (entry) {
+                    var tr = document.createElement('tr');
+                    var dur = entry.durationSeconds != null ? entry.durationSeconds + '초' : '-';
+                    tr.innerHTML = '<td>' + (entry.name || '-') + '</td><td>' + (entry.grade || '-') + '</td><td><code>' + (entry.code || '') + '</code></td><td>' + (entry.date || '') + '</td><td>' + dur + '</td>';
+                    tbody.appendChild(tr);
+                });
             });
         }
 
@@ -2052,6 +2078,3 @@
 </body>
 
 </html>
-
-
-

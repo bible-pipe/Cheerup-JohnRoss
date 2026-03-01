@@ -5,7 +5,7 @@
 ## 폴더 구조 (프로젝트 루트 기준)
 
 ```
-find-the-words/
+Cheerup-JohnRoss/
 ├── index.html          ← 메인 파일
 ├── assets/
 │   ├── images/         ← 그림 파일
@@ -49,9 +49,9 @@ find-the-words/
 
 배포 후 브라우저에서 아래 주소가 404가 아니어야 합니다.
 
-- https://bible-pipe.github.io/find-the-words/assets/images/intro.png
-- https://bible-pipe.github.io/find-the-words/assets/sounds/Villatic_Animation.mp3
-- https://bible-pipe.github.io/find-the-words/assets/sounds/National_Anthem_Instrumental_One_Verse.mp3
+- https://bible-pipe.github.io/Cheerup-JohnRoss/assets/images/intro.png
+- https://bible-pipe.github.io/Cheerup-JohnRoss/assets/sounds/Villatic_Animation.mp3
+- https://bible-pipe.github.io/Cheerup-JohnRoss/assets/sounds/National_Anthem_Instrumental_One_Verse.mp3
 
 위 주소가 열리면 그림·음악이 정상 로드됩니다.
 
