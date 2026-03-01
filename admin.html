@@ -83,7 +83,7 @@
     <script>
         /* Supabase 설정 - index.html과 동일한 값. 작동 안 하면 Project Settings > API > anon public (eyJ...로 시작) 사용 */
         var SUPABASE_URL = 'https://kdkcugqjytqsghvqdypj.supabase.co';
-        var SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imtka2N1Z3FqeXRxc2dodnFkeXBqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzIzMTEwOTEsImV4cCI6MjA4Nzg4NzA5MX0.zeNLenWFZLGnfE1Yhb9f22g1uaHsPGZud2Ou--mXbrE';
+        var SUPABASE_ANON_KEY = 'sb_publishable_0Wfx2MlTPVIxI0CsHm90qQ_VFEe3AfZ';
         var supabase = null;
         function initSupabase() {
             if (supabase) return;
@@ -97,7 +97,8 @@
         } else {
             initSupabase();
         }
-        setTimeout(initSupabase, 500);
+        setTimeout(initSupabase, 800);
+        setTimeout(initSupabase, 2000);
 
         var STORAGE_KEYS = {
             ranks: 'pipeGameRanks',
@@ -131,17 +132,19 @@
         var levelPool = [];
 
         function loadRanks(callback) {
+            initSupabase();
             if (supabase) {
                 supabase.from('ranks').select('name, grade, score, level, date').order('score', { ascending: false }).limit(100)
                     .then(function (res) { if (callback) callback(res.data || []); })
                     .catch(function (e) {
-                        try { var local = JSON.parse(localStorage.getItem(STORAGE_KEYS.ranks) || '[]'); if (callback) callback(local); } catch (x) { if (callback) callback([]); }
+                        if (callback) callback([]);
                     });
             } else {
                 try { var local = JSON.parse(localStorage.getItem(STORAGE_KEYS.ranks) || '[]'); if (callback) callback(local); } catch (e) { if (callback) callback([]); }
             }
         }
         function loadGiftCodeLog(callback) {
+            initSupabase();
             if (supabase) {
                 supabase.from('gift_codes').select('name, grade, code, date, duration_seconds').order('date', { ascending: false }).limit(500)
                     .then(function (res) {
@@ -149,7 +152,7 @@
                         if (callback) callback(list);
                     })
                     .catch(function (e) {
-                        try { var local = JSON.parse(localStorage.getItem(STORAGE_KEYS.giftCodeLog) || '[]'); if (callback) callback(local); } catch (x) { if (callback) callback([]); }
+                        if (callback) callback([]);
                     });
             } else {
                 try { var local = JSON.parse(localStorage.getItem(STORAGE_KEYS.giftCodeLog) || '[]'); if (callback) callback(local); } catch (e) { if (callback) callback([]); }
@@ -323,4 +326,3 @@
     </script>
 </body>
 </html>
-

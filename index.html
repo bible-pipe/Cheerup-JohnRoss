@@ -1192,7 +1192,7 @@
     <script>
         /* Supabase 설정 - Project Settings > API 에서 anon public 키(JWT, eyJ...로 시작) 사용 */
         var SUPABASE_URL = 'https://kdkcugqjytqsghvqdypj.supabase.co';
-        var SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imtka2N1Z3FqeXRxc2dodnFkeXBqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzIzMTEwOTEsImV4cCI6MjA4Nzg4NzA5MX0.zeNLenWFZLGnfE1Yhb9f22g1uaHsPGZud2Ou--mXbrE';
+        var SUPABASE_ANON_KEY = 'sb_publishable_0Wfx2MlTPVIxI0CsHm90qQ_VFEe3AfZ';
         var supabase = null;
         function initSupabase() {
             if (supabase) return;
@@ -1208,7 +1208,8 @@
         } else {
             initSupabase();
         }
-        setTimeout(initSupabase, 500);
+        setTimeout(initSupabase, 800);
+        setTimeout(initSupabase, 2000);
 
         const STORAGE_KEYS = {
             user: 'pipeGameUser',
@@ -1757,6 +1758,7 @@
         }
         function getGiftCodeLog() { return []; }
         function loadGiftCodeLog(callback) {
+            initSupabase();
             if (supabase) {
                 supabase.from('gift_codes').select('name, grade, code, date, duration_seconds').order('date', { ascending: false }).limit(500)
                     .then(function (res) {
@@ -1764,8 +1766,7 @@
                         if (callback) callback(list);
                     })
                     .catch(function (e) {
-                        var local = JSON.parse(localStorage.getItem(STORAGE_KEYS.giftCodeLog) || '[]');
-                        if (callback) callback(local);
+                        if (callback) callback([]);
                     });
             } else {
                 var local = JSON.parse(localStorage.getItem(STORAGE_KEYS.giftCodeLog) || '[]');
@@ -1878,12 +1879,12 @@
         }
 
         function loadRanks(callback) {
+            initSupabase();
             if (supabase) {
                 supabase.from('ranks').select('name, grade, score, level, date').order('score', { ascending: false }).limit(50)
                     .then(function (res) { if (callback) callback(res.data || []); })
                     .catch(function (e) {
-                        var local = JSON.parse(localStorage.getItem(STORAGE_KEYS.ranks) || '[]');
-                        if (callback) callback(local);
+                        if (callback) callback([]);
                     });
             } else {
                 var local = JSON.parse(localStorage.getItem(STORAGE_KEYS.ranks) || '[]');
@@ -2076,6 +2077,5 @@
         document.addEventListener('keydown', e => { if (e.key === 'Escape') { let gs = document.getElementById('gameScreen'); if (gs.classList.contains('active')) backToIntro() } });
     </script>
 </body>
-
 
 </html>
